@@ -51,7 +51,7 @@ test("alert filters and finding selection work without changing backend state", 
   await expect(page.getByText("SL-DEMO-011")).toHaveCount(0);
   await page.getByLabel("Filter severity").selectOption("All");
   await page.getByRole("button", {name:/SL-DEMO-011/}).click();
-  await expect(page.getByText("New AI destination observed")).toBeVisible();
+  await expect(page.locator(".dp-detail-title")).toHaveText("New AI destination observed");
   await expect(page.getByText("UNAVAILABLE", {exact:true})).toBeVisible();
 });
 

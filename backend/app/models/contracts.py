@@ -81,7 +81,11 @@ class HTTPMetadata(ContractModel):
             normalized = name.strip().lower()
             safe[name] = (
                 "REDACTED"
-                if normalized in sensitive_names or "secret" in normalized or normalized.endswith("-token")
+                if (
+                    normalized in sensitive_names
+                    or "secret" in normalized
+                    or normalized.endswith("-token")
+                )
                 else header_value[:1024]
             )
         return safe
