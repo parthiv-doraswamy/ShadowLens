@@ -154,7 +154,7 @@ providers:
   - id: ollama
     display_name: Ollama
     kind: local
-    hosts: [localhost, 127.0.0.1, ::1]
+    hosts: [localhost, 127.0.0.1, "::1"]
     paths: ["/api/*"]
     ports: [11434]
     sni: []
@@ -163,7 +163,7 @@ providers:
   - id: lm_studio
     display_name: LM Studio
     kind: local
-    hosts: [localhost, 127.0.0.1, ::1]
+    hosts: [localhost, 127.0.0.1, "::1"]
     paths: ["/v1/*", "/api/*"]
     ports: [1234]
     sni: []
@@ -171,7 +171,7 @@ providers:
   - id: llama_cpp
     display_name: llama.cpp
     kind: local
-    hosts: [localhost, 127.0.0.1, ::1]
+    hosts: [localhost, 127.0.0.1, "::1"]
     paths: ["/v1/*", "/completion"]
     ports: [8080, 8000]
     sni: []
@@ -180,7 +180,7 @@ providers:
   - id: vllm
     display_name: vLLM
     kind: local
-    hosts: [localhost, 127.0.0.1, ::1]
+    hosts: [localhost, 127.0.0.1, "::1"]
     paths: ["/v1/*"]
     ports: [8000]
     sni: []
