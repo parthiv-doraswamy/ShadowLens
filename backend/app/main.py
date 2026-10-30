@@ -23,7 +23,7 @@ from structlog.contextvars import bind_contextvars, clear_contextvars
 from app.api_schemas import IngestEvent
 from app.bus.event_bus import Collector, CollectorSupervisor, EventBus
 from app.config import Settings
-from app.ingestion.logs import ImportValidationError, MAX_IMPORT_BYTES, parse_log_bytes
+from app.ingestion.logs import MAX_IMPORT_BYTES, ImportValidationError, parse_log_bytes
 from app.models.contracts import Event
 from app.observability import configure_structured_logging, get_logger
 from app.persistence import (
@@ -319,7 +319,7 @@ def create_app(
     )
     async def ingest_log_file(
         request: Request,
-        file: UploadFile = File(...),
+        file: UploadFile = File(...),  # noqa: B008
     ) -> dict[str, object]:
         """Import HAR/JSON/JSONL metadata; request and response bodies are discarded."""
         filename = file.filename or ""
