@@ -105,6 +105,23 @@ def _request_parts(record: dict[str, Any], source_format: str) -> tuple[dict[str
         headers = request.get("headers")
         method = request.get("method")
         duration = record.get("time")
+    elif source_format == "shadowlens":
+        http = record.get("http") or {}
+        net = record.get("net") or {}
+        if not isinstance(http, dict) or not isinstance(net, dict):
+            raise ValueError("invalid_shadowlens_record")
+        host = net.get("dst_host") or record.get("host")
+        scheme = http.get("scheme") or "https"
+        port = net.get("dst_port") or (443 if scheme == "https" else 80)
+        path = http.get("path") or "/"
+        url = http.get("url")
+        if not isinstance(url, str) and isinstance(host, str):
+            url = f"{scheme}://{host}:{port}{path}"
+        headers = http.get("headers")
+        method = http.get("method")
+        started = record.get("ts")
+        response = {}
+        duration = None
     elif source_format == "mitmproxy":
         request = record.get("request") or {}
         if not isinstance(request, dict):
@@ -257,10 +274,18 @@ def _detect_format(filename: str, data: bytes) -> str:
         return "jsonl"
     if isinstance(parsed, dict) and isinstance(parsed.get("log"), dict):
         return "har"
-    if isinstance(parsed, list) and parsed and all(
-        isinstance(item, dict) and "request" in item for item in parsed[:3]
+    records = parsed.get("events") if isinstance(parsed, dict) else parsed
+    if isinstance(records, list) and records and all(
+        isinstance(item, dict) and "request" in item for item in records[:3]
     ):
         return "mitmproxy"
+    if isinstance(records, list) and records and all(
+        isinstance(item, dict) and ("http" in item or "net" in item)
+        for item in records[:3]
+    ):
+        return "shadowlens"
+    if isinstance(parsed, dict) and isinstance(parsed.get("http"), dict):
+        return "shadowlens"
     if suffix == ".har":
         raise ImportValidationError("file does not contain a HAR log")
     return "json"
@@ -297,8 +322,11 @@ def parse_log_bytes(
             if not isinstance(entries, list):
                 raise ImportValidationError("HAR log.entries must be an array")
             raw_records = list(enumerate(entries, start=1))
-        elif source_format == "mitmproxy":
-            raw_records = list(enumerate(parsed, start=1))
+        elif source_format in {"mitmproxy", "shadowlens"}:
+            records = parsed.get("events", []) if isinstance(parsed, dict) else parsed
+            if not isinstance(records, list):
+                raise ImportValidationError("ShadowLens events must be an array")
+            raw_records = list(enumerate(records, start=1))
         elif isinstance(parsed, list):
             raw_records = list(enumerate(parsed, start=1))
         elif isinstance(parsed, dict):
