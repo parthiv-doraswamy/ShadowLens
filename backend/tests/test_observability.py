@@ -45,7 +45,9 @@ def test_log_processor_bounds_depth_strings_and_collections() -> None:
         "deep": {
             "deeper": {
                 "deepest": {
-                    "beyond": {"still_beyond": "not emitted"}
+                    "beyond": {
+                        "still_beyond": {"fifth_level": "not emitted"}
+                    }
                 }
             }
         }
@@ -54,7 +56,9 @@ def test_log_processor_bounds_depth_strings_and_collections() -> None:
     value["long"] = "x" * 600
     processed = redact_log_fields(None, "info", value)
     assert (
-        processed["deep"]["deeper"]["deepest"]["beyond"]["still_beyond"]
+        processed["deep"]["deeper"]["deepest"]["beyond"]["still_beyond"][
+            "fifth_level"
+        ]
         == "[TRUNCATED]"
     )
     assert len(processed["items"]) == 33
