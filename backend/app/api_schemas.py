@@ -16,7 +16,7 @@ from app.models.contracts import (
     NetworkMetadata,
     ProcessMetadata,
 )
-from app.models.enums import RawVisibility, VisibilityTier, EventSource
+from app.models.enums import EventSource, RawVisibility, VisibilityTier
 
 
 class IngestHTTPMetadata(ContractModel):
