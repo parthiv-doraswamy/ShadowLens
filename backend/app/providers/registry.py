@@ -265,11 +265,11 @@ class ProviderRegistry:
 
         if scored:
             scored.sort(key=lambda item: (item[0], item[1].id), reverse=True)
-            _, best, evidence = scored[0]
+            _, best, best_evidence = scored[0]
             # A concrete host/SNI match is strong; corroborated non-host signals
             # can classify only when at least two independent signal families match.
-            strong_host = any(item.signal in {"host", "sni"} for item in evidence)
-            confidence = 0.99 if strong_host else min(0.85, 0.60 + 0.05 * len(evidence))
+            strong_host = any(item.signal in {"host", "sni"} for item in best_evidence)
+            confidence = 0.99 if strong_host else min(0.85, 0.60 + 0.05 * len(best_evidence))
             return ClassificationResult(
                 provider=best.id,
                 display_name=best.display_name,
@@ -277,7 +277,7 @@ class ProviderRegistry:
                 confidence=confidence,
                 matched=True,
                 provisional=False,
-                evidence=evidence,
+                evidence=best_evidence,
             )
 
         api_like_path = bool(signal.path and signal.path.lower() in {
