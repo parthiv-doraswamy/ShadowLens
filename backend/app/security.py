@@ -41,7 +41,7 @@ def load_or_create_api_token(token_path: Path | None = None) -> str:
         descriptor = os.open(path, flags, 0o600)
     except FileExistsError:
         if path.is_symlink() or not path.is_file():
-            raise ValueError("API token path must be a regular file")
+            raise ValueError("API token path must be a regular file") from None
         if os.name != "nt":
             path.chmod(0o600)
         read_flags = os.O_RDONLY
@@ -51,7 +51,7 @@ def load_or_create_api_token(token_path: Path | None = None) -> str:
         with os.fdopen(descriptor, "r", encoding="utf-8") as token_file:
             token = token_file.read(513).strip()
         if len(token) < 32 or len(token) > 512:
-            raise ValueError("stored API token is empty or has an invalid length")
+            raise ValueError("stored API token is empty or has an invalid length") from None
         return token
 
     token = secrets.token_urlsafe(32)
