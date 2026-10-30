@@ -148,3 +148,44 @@ def test_provider_yaml_covers_all_minimum_named_providers() -> None:
         "cursor", "github_copilot", "codeium_windsurf", "tabnine",
     }
     assert {provider.id for provider in REGISTRY.providers} == expected
+
+
+@pytest.mark.parametrize("provider", REGISTRY.providers, ids=lambda item: item.id)
+def test_every_provider_has_a_negative_example(provider: object) -> None:
+    """Provider path/port hints must not match when the destination host is unrelated."""
+    paths = provider.paths
+    ports = provider.ports
+    signal = Signal(
+        host="unrelated-attacker.invalid",
+        path=paths[0] if paths else "/",
+        port=ports[0] if ports else None,
+    )
+    result = REGISTRY.classify(signal)
+    assert result.provider != provider.id
+
+
+def test_unknown_json_llm_shape_remains_provisional() -> None:
+    result = REGISTRY.classify(Signal(
+        host="unrecognized.example",
+        path="/custom/inference",
+        json_keys=["model", "messages"],
+    ))
+    assert result.provider == "unknown_llm_api"
+    assert result.confidence == 0.7
+    assert result.provisional is True
+    assert result.matched is False
+
+
+def test_wildcard_host_patterns_support_region_labels_and_boundaries() -> None:
+    result = REGISTRY.classify(Signal(
+        host="bedrock-runtime.us-east-1.amazonaws.com",
+        path="/model/example/invoke",
+        port=443,
+    ))
+    assert result.provider == "aws_bedrock"
+    spoofed = REGISTRY.classify(Signal(
+        host="bedrock-runtime.us-east-1.amazonaws.com.attacker.invalid",
+        path="/model/example/invoke",
+        port=443,
+    ))
+    assert spoofed.provider == "unknown"
