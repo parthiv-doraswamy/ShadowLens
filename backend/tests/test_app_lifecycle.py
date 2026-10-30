@@ -9,8 +9,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi.testclient import TestClient
 import pytest
+
+from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.bus.event_bus import EventPublisher

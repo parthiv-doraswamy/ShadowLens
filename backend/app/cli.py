@@ -46,7 +46,9 @@ def _write_policy_starter(path: Path) -> bool:
         descriptor = os.open(path, flags, 0o600)
     except FileExistsError:
         if not path.is_file():
-            raise CLIError("policy starter path exists and is not a regular file")
+            raise CLIError(
+                "policy starter path exists and is not a regular file"
+            ) from None
         return False
     with os.fdopen(descriptor, "w", encoding="utf-8") as policy_file:
         policy_file.write(DEFAULT_POLICY_STARTER)
@@ -168,7 +170,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"ShadowLens local state initialized: {result['data_dir']}")
             print(f"Database: {result['database_url']}")
             if result["operator_token_configured"]:
-                print("Authentication uses the configured SHADOWLENS_API_TOKEN; its value is not displayed.")
+                print(
+                    "Authentication uses the configured SHADOWLENS_API_TOKEN; "
+                    "its value is not displayed."
+                )
             else:
                 print(f"API token file: {result['token_file']}")
                 print("A new random API token was created; read it from the owner-only token file.")
