@@ -3,7 +3,7 @@
 **Source:** `ShadowLens_Unified_Master_Specification.md`, especially sections 15, 17, 20, 21 and 22.  
 **Planning model:** Section 17 milestone sequence M0–M8 is the primary detailed delivery order. Section 20 supplies vertical-slice phase gates A–G. The work-allocation prompt pack supplies chunk-sized execution sequencing.  
 **Current branch:** `main`  
-**Current state:** Chunks 0.1–0.3 planning/architecture are complete; Chunk 0.4 CI passed but CodeQL validation is failed/pending diagnosis; Chunk 1.1 design-system implementation is committed and awaiting final CI verification. Product milestones are not complete.
+**Current state:** Chunks 0.1–0.4 and Chunk 1.1 are complete and verified by CI/security workflows; Chunk 1.2 landing page implementation is committed and awaiting CI verification. Product milestones are not complete.
 
 ## 1. Delivery principles
 
@@ -264,7 +264,7 @@ The master spec's milestone gates take precedence over any schedule estimate; th
 | Human approval gates | Complete |
 | Architecture and traceability (Chunk 0.3) | Complete and audited — 7 architecture documents + full traceability matrix; see docs/reports/chunk_0_3_report.md |
 | CI/security automation (Chunk 0.4) | CI passed (Ruff/mypy/pytest/typecheck/build/Playwright); Gitleaks and Semgrep passed; both initial CodeQL jobs failed; `security-events: write` was added to permit SARIF upload and the follow-up run is pending. Dependabot is configured and has opened six update PRs; see docs/reports/chunk_0_4_report.md |
-| Frontend design system (Chunk 1.1) | Implemented: tokens, reusable primitives, /design-system showcase, responsive/accessibility foundations and Playwright interactions; final CI verification pending; see docs/reports/chunk_1_1_report.md |
+| Frontend design system (Chunk 1.1) | Implemented and verified: tokens, reusable primitives, /design-system showcase, responsive/accessibility foundations and Playwright interactions; CI and security workflows green on main; see docs/reports/chunk_1_1_report.md |
 | Repository scaffold/CI | Complete for bootstrap scope |
 | M0 foundation | Partial only; see Chunk 0.1 report |
 | Product requirements REQ-* | Not implemented/verified yet |
@@ -277,3 +277,6 @@ The master spec's milestone gates take precedence over any schedule estimate; th
 **Chunk 1.1 status:** Design tokens and reusable UI primitives plus a dedicated showcase route are committed. No API integration or production telemetry was added. The final CI run must pass before marking the chunk verified.
 
 **Do not infer requirement completion from the presence of the repository scaffold or a passing bootstrap CI run.**
+
+
+| Frontend landing page (Chunk 1.2) | Implemented: responsive product landing page, CSS-only cinematic atmosphere, product capabilities, T1/T2/T3 visibility explanation, privacy principles and Playwright coverage; final CI verification pending; see docs/reports/chunk_1_2_report.md |
