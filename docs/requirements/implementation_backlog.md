@@ -263,7 +263,7 @@ The master spec's milestone gates take precedence over any schedule estimate; th
 | Implementation backlog | Complete |
 | Human approval gates | Complete |
 | Architecture and traceability (Chunk 0.3) | Complete and audited — 7 architecture documents + full traceability matrix; see docs/reports/chunk_0_3_report.md |
-| CI/security automation (Chunk 0.4) | CI passed (Ruff/mypy/pytest/typecheck/build/Playwright); Gitleaks and Semgrep passed; both CodeQL jobs failed and need log-level diagnosis. Dependabot is configured and has opened six update PRs; see docs/reports/chunk_0_4_report.md |
+| CI/security automation (Chunk 0.4) | CI passed (Ruff/mypy/pytest/typecheck/build/Playwright); Gitleaks and Semgrep passed; both initial CodeQL jobs failed; `security-events: write` was added to permit SARIF upload and the follow-up run is pending. Dependabot is configured and has opened six update PRs; see docs/reports/chunk_0_4_report.md |
 | Frontend design system (Chunk 1.1) | Implemented: tokens, reusable primitives, /design-system showcase, responsive/accessibility foundations and Playwright interactions; final CI verification pending; see docs/reports/chunk_1_1_report.md |
 | Repository scaffold/CI | Complete for bootstrap scope |
 | M0 foundation | Partial only; see Chunk 0.1 report |
@@ -272,7 +272,7 @@ The master spec's milestone gates take precedence over any schedule estimate; th
 
 **Chunk 0.3 status:** Architecture and traceability documents have been committed. No product architecture components have been implemented by this documentation chunk. The traceability matrix maps all 50 REQ IDs, 15 NOV IDs and 10 NFRs to planned ownership and tests.
 
-**Chunk 0.4 status:** CI passed. Gitleaks and Semgrep passed; both CodeQL jobs failed during Analyze and remain unresolved. The Playwright checks cover the bootstrap shell and design-system component interactions, not full analyst workflows.
+**Chunk 0.4 status:** CI passed. Gitleaks and Semgrep passed; both initial CodeQL jobs failed during Analyze; a SARIF-upload permission remediation is committed and its rerun remains pending. The Playwright checks cover the bootstrap shell and design-system component interactions, not full analyst workflows.
 
 **Chunk 1.1 status:** Design tokens and reusable UI primitives plus a dedicated showcase route are committed. No API integration or production telemetry was added. The final CI run must pass before marking the chunk verified.
 
