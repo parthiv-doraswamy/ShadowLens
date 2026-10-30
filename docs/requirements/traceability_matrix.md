@@ -23,7 +23,7 @@
 | REQ-COL-005 | collectors/gateway | 9.4 / M6 | tests/integration/test_gateway.py | Gateway setup/status panel |
 | REQ-COL-006 | collectors/agent_hooks | 3.1 / M3 | tests/integration/test_agent_adapters.py | Agent activity inventory |
 | REQ-COL-007 | sim/scenarios | 8.1 / M6 | tests/integration/test_simulator.py | Scenario launcher and populated demo |
-| REQ-DISC-001 | core/providers | 3.1 / M2 | tests/unit/test_provider_registry.py | Provider identity/confidence |
+| REQ-DISC-001 | backend/app/providers | 3.1 / M2 | backend/tests/test_provider_registry.py | Provider identity/confidence, evidence, provisional unknown state |
 | REQ-DISC-002 | core/providers + policy | 3.1 / M2 | tests/unit/test_sanctioned_shadow.py | Shadow AI finding / sanction status |
 | REQ-DISC-003 | collectors/config_scanner | 3.2 / M3 | tests/security/test_config_scanner_boundary.py | Config discovery results + opt-in state |
 | REQ-DISC-004 | collectors/browser_extension | 3.2 / M3 | tests/unit/test_extension_discovery.py | Extension risk finding |
