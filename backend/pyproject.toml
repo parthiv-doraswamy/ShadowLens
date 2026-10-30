@@ -30,6 +30,9 @@ dev = [
   "ruff>=0.6",
 ]
 
+[tool.setuptools.package-data]
+"app.providers" = ["providers.yaml"]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["app*"]
