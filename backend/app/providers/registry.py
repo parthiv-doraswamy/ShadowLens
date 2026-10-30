@@ -225,7 +225,7 @@ class ProviderRegistry:
                 )
             if any(_host_matches(signal.sni, pattern) for pattern in provider.sni):
                 score += 4
-                    evidence.append(
+                evidence.append(
                     MatchEvidence("sni", "TLS SNI matched provider signature")
                 )
             matching_paths = [
@@ -234,7 +234,9 @@ class ProviderRegistry:
             ]
             if matching_paths:
                 score += 1
-                evidence.append(MatchEvidence("path", "request path matched provider signature"))
+                evidence.append(
+                    MatchEvidence("path", "request path matched provider signature")
+                )
             if signal.port is not None and signal.port in provider.ports:
                 score += 1
                 evidence.append(
