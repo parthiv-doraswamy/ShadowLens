@@ -92,6 +92,23 @@ def test_mitmproxy_json_dump_is_detected_and_parsed() -> None:
     assert "sk-ant-secret" not in event.model_dump_json()
 
 
+def test_shadowlens_normalized_mock_event_export_is_supported() -> None:
+    mock = {
+        "events": [{
+            "ts": "2026-10-31T10:00:00Z",
+            "source": "log",
+            "tier": "T1",
+            "net": {"dst_host": "api.openai.com", "dst_port": 443},
+            "http": {"method": "POST", "path": "/v1/chat/completions"},
+        }]
+    }
+    report = parse_log_bytes("shadowlens.json", json.dumps(mock).encode())
+    assert report.format == "shadowlens"
+    assert report.imported == 1
+    assert report.events[0].ai is not None
+    assert report.events[0].ai.provider == "openai"
+
+
 def test_nginx_style_jsonl_and_mock_log_are_supported() -> None:
     nginx = {
         "time": "2026-10-31T10:00:00Z",
