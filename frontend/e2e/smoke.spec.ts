@@ -20,6 +20,31 @@ test("landing navigation reaches platform sections and design preview", async ({
   await expect(page.getByRole("heading", { name: "Interface system" })).toBeVisible();
 });
 
+test("dashboard shell provides all primary workspace destinations", async ({ page }) => {
+  await page.goto("/app/overview");
+  await expect(page.getByRole("heading", { name: "Overview", level: 1 })).toBeVisible();
+  await expect(page.getByText("PREVIEW ENVIRONMENT")).toBeVisible();
+  await expect(page.getByText(/No backend API is connected/)).toBeVisible();
+  await page.getByRole("link", { name: /AI Inventory/ }).click();
+  await expect(page).toHaveURL(/\/app\/inventory$/);
+  await expect(page.getByRole("heading", { name: "AI Inventory", level: 1 })).toBeVisible();
+  await expect(page.getByRole("link", { name: /AI Inventory/ })).toHaveAttribute("aria-current", "page");
+  await page.getByRole("link", { name: /System & Privacy/ }).click();
+  await expect(page).toHaveURL(/\/app\/system$/);
+  await expect(page.getByRole("heading", { name: "System & Privacy", level: 1 })).toBeVisible();
+});
+
+test("dashboard shell navigation is usable on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/app/overview");
+  await page.getByRole("button", { name: "Open navigation" }).click();
+  await expect(page.getByRole("navigation", { name: "Workspace navigation" })).toBeVisible();
+  await page.getByRole("link", { name: /Leak Alerts/ }).click();
+  await expect(page).toHaveURL(/\/app\/alerts$/);
+  await expect(page.getByRole("heading", { name: "Leak Alerts", level: 1 })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open navigation" })).toHaveAttribute("aria-expanded", "false");
+});
+
 test("design system showcase exposes working component interactions", async ({ page }) => {
   await page.goto("/design-system");
   await expect(page.getByRole("heading", { name: "Interface system" })).toBeVisible();
