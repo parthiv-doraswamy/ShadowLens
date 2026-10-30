@@ -86,7 +86,7 @@ Implemented:
 - `POST /api/events` requires bearer authentication and accepts a validated metadata-only canonical event. HTTP request schemas deliberately exclude `http.body_ref`; sensitive headers are redacted before queueing and persistence.
 - First-run API token is generated locally and stored in `.shadowlens/access.token` with restrictive file/directory permissions. `SHADOWLENS_API_TOKEN` is an explicit operator override. API docs and OpenAPI are also protected.
 
-Not yet implemented: multipart HAR/JSONL/PCAP parsers, real source collectors, normalization/detection, list/query APIs, SSE, CLI commands, and the rest of the domain engines. The in-memory bus is not a durable queue: a process crash before a worker commits an accepted event can lose it. The server must be launched bound to `127.0.0.1`; the application factory does not enforce Uvicorn's bind address.
+Not yet implemented: multipart HAR/JSONL/PCAP parsers, real source collectors, normalization/detection, list/query APIs, SSE, remaining CLI actions (scan/ingest/simulate/demo/exports/forget), and the rest of the domain engines. The in-memory bus is not a durable queue: a process crash before a worker commits an accepted event can lose it. The official shadowlens serve command enforces loopback binding; operators who bypass it and launch Uvicorn directly can still override the socket bind address.
 
 The previous `/api/v1/health` bootstrap route was replaced by the source-specified `/api/health` path. The auth exception follows the explicit NFR-SEC-1 rule rather than the broad API heading.
 
@@ -103,3 +103,16 @@ Application-owned operational logs use structlog and JSON on stderr. The redacti
 The HTTP access middleware logs only method, matched route template, status, elapsed milliseconds and a server-generated request ID. It does not log query strings, request headers, client addresses, request bodies or payloads. The request ID is returned as `X-Request-ID`. Uvicorn's default access logger is disabled because it can include raw request targets and query strings.
 
 Worker and collector failures log the exception class and counters/backoff only; exception messages are not emitted or retained in the collector supervisor's status. Unexpected API exceptions return a generic 500 body and a request ID rather than framework exception text. This logging boundary does not imply that arbitrary third-party or operating-system logs are captured or sanitized.
+
+
+## 12. Local runtime configuration and CLI
+
+The app.config.Settings model loads SHADOWLENS_* values and an optional .env from the current working directory. The defaults use 127.0.0.1:8000, a local .shadowlens data directory, SQLite, one event worker, a bounded queue and the configured JSON log level. The configured host accepts only localhost or a literal loopback IP. CORS origins are parsed as HTTP(S) origins and must also be localhost or a loopback IP; wildcard, remote, credential-bearing and path-bearing origins are rejected. CORS does not allow credentials and exposes only the request-ID response header.
+
+The installed shadowlens console command currently supports:
+- shadowlens init: create the local data directory, random owner-only bearer token when no operator token is configured, SQLite schema and a non-enforcing policy starter.
+- shadowlens serve: run app.main:app through Uvicorn with a validated loopback bind and Uvicorn access logging disabled. --reload is intended for local development.
+
+The policy starter is comments-only and intentionally activates no rules because a versioned policy schema/evaluator is not implemented yet. serve --live and serve --gateway return an explicit unavailable error; they do not start a packet capture or proxy. Scan, ingest, simulate, demo, benchmark, export and forget CLI actions remain future work.
+
+SQLite database parent directories created by initialization use restrictive permissions on POSIX; the database file is set to owner read/write. Existing parent directory permissions are not changed. Token and starter policy files are also created with owner-only file permissions. These filesystem guarantees are POSIX-specific; Windows permission semantics differ.

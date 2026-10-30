@@ -322,7 +322,7 @@ Chunk 2.3 does not connect collectors to FastAPI or persistence. Queue capacity 
 | M0.5 local bearer token and protected API | Implemented: first-run random token file, owner-only permissions, constant-time comparison, authenticated event intake, docs and OpenAPI |
 | M0.5 health and ingestion vertical slice | Implemented: unauthenticated `GET /api/health` checks DB and reports bus/collector status; authenticated `POST /api/events` accepts canonical metadata events |
 | M0.6 structured redacted logging | Still outstanding; this chunk does not claim request/log secret-redaction coverage |
-| M0 remaining | CLI `init/serve`, real collectors, multipart HAR/JSONL/PCAP parsing, normalizer/detectors, SSE and broader API inventory remain outstanding |
+| M0 remaining | CLI init/serve is implemented in Chunk 2.6; real collectors, multipart HAR/JSONL/PCAP parsing, normalizer/detectors, SSE, remaining CLI actions and broader API inventory remain outstanding |
 
 Chunk 2.4 deliberately keeps raw bodies out of the HTTP ingestion contract: the request-specific schema has no `body_ref` field, and sensitive HTTP headers are redacted before persistence. Queue acceptance returns `202`, not a durable-commit guarantee; the event bus is in-memory and may lose queued work if the process terminates before persistence completes. No real collector is configured by default.
 
@@ -338,6 +338,21 @@ The API route follows the source's `/api` prefix and `/api/health` NFR-SEC-1 exc
 | Secret/payload redaction | Implemented recursive sensitive-key redaction, common bearer/API-key pattern scrubbing, bounded strings/collections/depth and no arbitrary object repr |
 | Failure diagnostics | Worker/collector logs record exception class and counters/backoff only; collector supervisor retains only exception class |
 | Operational hardening | Uvicorn access logging disabled; generic internal-error response; `X-Request-ID` returned for handled responses |
-| M0 remaining | CLI `init/serve`, real collectors, multipart ingestion, structured file logging/rotation and broader API inventory remain outstanding |
+| M0 remaining | CLI init/serve is implemented in Chunk 2.6; real collectors, multipart ingestion, remaining CLI actions, structured file logging/rotation and broader API inventory remain outstanding |
 
 Chunk 2.5 does not claim that third-party, host OS or process-supervisor logs are sanitized. Application-owned logging is covered by focused redaction and no-query/header/body tests. Raw payloads and exception messages are not intentionally logged.
+
+
+## 10. Current execution update — Chunk 2.6
+
+| Work package | State |
+|---|---|
+| Typed local runtime settings | Implemented using Pydantic Settings: .env/environment loading, data/token/database paths, port, queue, workers, timeout and log level |
+| Loopback default and enforcement | Implemented in the official CLI: localhost and literal loopback addresses only; non-loopback binds are rejected |
+| Restricted CORS | Implemented: only local HTTP(S) origins; no wildcard/remote origins or credentials; request ID exposed |
+| shadowlens init | Implemented: private local state, random token, SQLite schema and non-enforcing policy starter; idempotent and preserves existing policy files |
+| shadowlens serve | Implemented: starts the FastAPI app through Uvicorn with access logging disabled; optional reload for local development |
+| Optional adapters | --live and --gateway fail closed because live capture and Lens Gateway are not implemented |
+| CLI still pending | scan, ingest, simulate, demo, bench, export and forget remain future implementation work |
+
+The generated policy.default.yaml is intentionally comments-only and does not represent an active or validated policy. Only init and serve are supported commands in this chunk. The official CLI enforces loopback binding; a direct custom Uvicorn invocation can bypass CLI bind validation and must not be treated as the recommended launch method.

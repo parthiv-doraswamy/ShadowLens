@@ -150,16 +150,34 @@ def create_database_engine(database_url: str | None = None) -> Engine:
 
 def initialize_database(engine: Engine) -> None:
     """Apply the initial additive schema migration; safe to call repeatedly."""
-    url = str(engine.url)
-    if url.startswith("sqlite:///"):
-        database_path = url.removeprefix("sqlite:///")
-        if database_path != ":memory:":
-            Path(database_path).expanduser().parent.mkdir(parents=True, exist_ok=True)
-    SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
-        if session.get(SchemaMigrationRow, 1) is None:
-            session.add(SchemaMigrationRow(version=1, applied_at=_utc_now()))
-            session.commit()
+    database_path: Path | None = None
+    database_name = engine.url.database
+    if (
+        engine.dialect.name == "sqlite"
+        and database_name is not None
+        and database_name not in {"", ":memory:"}
+    ):
+        database_path = Path(database_name).expanduser()
+        parent_existed = database_path.parent.exists()
+        database_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        if os.name != "nt" and not parent_existed:
+            database_path.parent.chmod(0o700)
+        if database_path.is_symlink():
+            raise ValueError("SQLite database path must not be a symbolic link")
+
+    previous_umask = os.umask(0o077) if os.name != "nt" else None
+    try:
+        SQLModel.metadata.create_all(engine)
+        with Session(engine) as session:
+            if session.get(SchemaMigrationRow, 1) is None:
+                session.add(SchemaMigrationRow(version=1, applied_at=_utc_now()))
+                session.commit()
+    finally:
+        if previous_umask is not None:
+            os.umask(previous_umask)
+
+    if database_path is not None and os.name != "nt" and database_path.exists():
+        database_path.chmod(0o600)
 
 
 @contextmanager

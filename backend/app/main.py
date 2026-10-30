@@ -1,7 +1,6 @@
 """FastAPI application factory and privacy-safe event ingestion lifecycle."""
 from __future__ import annotations
 
-import os
 import secrets
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -17,11 +16,13 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import Engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.base import RequestResponseEndpoint
+from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import Response
 from structlog.contextvars import bind_contextvars, clear_contextvars
 
 from app.api_schemas import IngestEvent
 from app.bus.event_bus import Collector, CollectorSupervisor, EventBus
+from app.config import Settings
 from app.models.contracts import Event
 from app.observability import configure_structured_logging, get_logger
 from app.persistence import (
@@ -31,32 +32,6 @@ from app.persistence import (
     session_scope,
 )
 from app.security import load_or_create_api_token
-
-
-def _int_setting(name: str, default: int) -> int:
-    raw_value = os.getenv(name)
-    if raw_value is None:
-        return default
-    try:
-        value = int(raw_value)
-    except ValueError as exc:
-        raise ValueError(f"{name} must be an integer") from exc
-    if value < 1:
-        raise ValueError(f"{name} must be greater than zero")
-    return value
-
-
-def _float_setting(name: str, default: float) -> float:
-    raw_value = os.getenv(name)
-    if raw_value is None:
-        return default
-    try:
-        value = float(raw_value)
-    except ValueError as exc:
-        raise ValueError(f"{name} must be a number") from exc
-    if value <= 0:
-        raise ValueError(f"{name} must be greater than zero")
-    return value
 
 
 async def _persist_event(engine: Engine, event: Event) -> None:
@@ -73,33 +48,46 @@ def create_app(
     queue_capacity: int | None = None,
     event_workers: int | None = None,
     publish_timeout_seconds: float | None = None,
+    settings: Settings | None = None,
 ) -> FastAPI:
     """Create an isolated application, suitable for local service and tests."""
+    runtime_settings = settings or Settings()
     capacity = (
         queue_capacity
         if queue_capacity is not None
-        else _int_setting("SHADOWLENS_EVENT_QUEUE_CAPACITY", 256)
+        else runtime_settings.event_queue_capacity
     )
     workers = (
         event_workers
         if event_workers is not None
-        else _int_setting("SHADOWLENS_EVENT_WORKERS", 1)
+        else runtime_settings.event_workers
     )
     publish_timeout = (
         publish_timeout_seconds
         if publish_timeout_seconds is not None
-        else _float_setting("SHADOWLENS_INGEST_TIMEOUT_SECONDS", 1.0)
+        else runtime_settings.ingest_timeout_seconds
     )
     if capacity < 1 or workers < 1 or publish_timeout <= 0:
         raise ValueError("queue capacity, workers and publish timeout must be positive")
 
-    log_level = os.getenv("SHADOWLENS_LOG_LEVEL", "INFO")
+    effective_database_url = (
+        database_url
+        if database_url is not None
+        else runtime_settings.resolved_database_url
+    )
+    effective_token_path = token_path or runtime_settings.resolved_token_file
+    configured_token = (
+        runtime_settings.api_token.get_secret_value()
+        if runtime_settings.api_token is not None
+        else None
+    )
+    log_level = runtime_settings.log_level
     configure_structured_logging(log_level)
     logger = get_logger("shadowlens.application")
 
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
-        engine = create_database_engine(database_url)
+        engine = create_database_engine(effective_database_url)
         bus = EventBus(
             handler=lambda event: _persist_event(engine, event),
             capacity=capacity,
@@ -108,7 +96,10 @@ def create_app(
         supervisor = CollectorSupervisor(collectors or {}, publish=bus.publish)
         try:
             initialize_database(engine)
-            api_token = load_or_create_api_token(token_path)
+            api_token = load_or_create_api_token(
+                effective_token_path,
+                configured_token=configured_token,
+            )
             await bus.start()
             await supervisor.start()
             logger.info(
@@ -161,6 +152,15 @@ def create_app(
         docs_url=None,
         openapi_url=None,
         lifespan=lifespan,
+    )
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=runtime_settings.cors_allow_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+        expose_headers=["X-Request-ID"],
+        max_age=600,
     )
 
     @application.middleware("http")

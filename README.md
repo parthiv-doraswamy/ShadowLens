@@ -2,30 +2,28 @@
 
 Local-first AI Shadow IT, sensitive-data exposure, and agent-governance auditing platform.
 
-> **Status:** Specification extraction and architecture documentation complete. Product implementation has not yet started beyond the initial FastAPI/React bootstrap.
+> **Implementation status:** Bootstrap, canonical contracts, SQLite persistence, bounded event pipeline, authenticated metadata ingestion, structured logging, local CLI initialization and loopback API startup are implemented incrementally. Provider collectors, detection and dashboard-to-API integration are still in progress.
 
 ## Source of truth
 
 - `ShadowLens_Unified_Master_Specification.md` — authoritative product specification.
-- `docs/requirements/requirements_catalog.md` — 50 functional/privacy requirement IDs, 15 novelty features, 10 NFRs, APIs, rules, providers and scenarios.
+- `docs/requirements/requirements_catalog.md` — functional/privacy requirements, novelty features and NFRs.
 - `docs/requirements/acceptance_criteria.md` — source-derived acceptance criteria.
-- `docs/requirements/implementation_backlog.md` — milestone M0–M8 backlog and phase gates.
+- `docs/requirements/implementation_backlog.md` — milestone backlog and phase gates.
 - `docs/requirements/human_approval_gates.md` — explicit permission and opt-in boundaries.
 - `docs/requirements/traceability_matrix.md` — requirement-to-module/chunk/test/outcome mapping.
-- `docs/architecture/` — system, backend, frontend, event pipeline, data model, privacy boundary and threat model.
+- `docs/architecture/` — system, backend, frontend, event pipeline, data model, privacy and threat-model documents.
 
 ## Technology baseline
 
 - Python 3.11+ · FastAPI · asyncio · Pydantic v2 · SQLModel · SQLite WAL
-- psutil · dpkt · optional Scapy · optional httpx gateway
-- React · TypeScript · Vite · Tailwind CSS · shadcn/ui
-- pytest · Hypothesis · Playwright · Ruff · mypy
+- structlog JSON logs · psutil · dpkt · optional Scapy · optional httpx gateway
+- React · TypeScript · Vite · Tailwind CSS
+- pytest · Playwright · Ruff · mypy
 
-## Local development
+## Local backend quick start
 
-Prerequisites: Python 3.11+ and a current Node.js LTS release with npm.
-
-### Backend
+Prerequisites: Python 3.11+.
 
 ```bash
 cd backend
@@ -33,18 +31,27 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -e ".[dev]"
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+shadowlens init
+shadowlens serve
 ```
 
-Current bootstrap health endpoint: http://127.0.0.1:8000/api/v1/health
+The API binds to `127.0.0.1:8000` by default. Its unauthenticated health check is [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health). Operational API routes require the bearer token stored in the owner-only `.shadowlens/access.token` file. Do not paste the token into logs, tickets or source control.
 
-### Frontend
+The CLI currently supports `init` and `serve`. `serve --live` and `serve --gateway` fail closed because those adapters are not implemented yet. The initial policy file is an inert starter; there is no active policy evaluator yet.
+
+### Configuration
+
+Copy `.env.example` to `.env` in the directory from which you run ShadowLens, then adjust local settings as required. Settings use the `SHADOWLENS_` prefix. The host and CORS origin validators reject non-loopback values. SQLite, the random local token and structured JSON logs are the defaults.
+
+### Frontend development
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
+The frontend currently contains design-system, landing-page and synthetic dashboard templates; the pages are not yet connected to live backend services.
 
 ## Architecture and privacy principles
 
@@ -57,10 +64,6 @@ npm run dev
 - Local-only and loopback defaults; optional integrations require explicit opt-in.
 - Core product must work without LLM credentials.
 
-## Current implementation status
-
-Repository/bootstrap CI is in place. The current backend is a minimal FastAPI health endpoint and the frontend is a bootstrap screen. Canonical models, SQLite repositories, event queue, collectors, detection engines, API routes and dashboard workflows remain future implementation work.
-
 ## Validation
 
-GitHub Actions currently runs backend install/Ruff/pytest and frontend install/typecheck/build. A passing bootstrap workflow does not imply product requirements are implemented.
+GitHub Actions runs backend Ruff/mypy/pytest, frontend typecheck/build/Playwright, Gitleaks, Semgrep and CodeQL. A passing bootstrap or foundation workflow does not imply every product requirement is implemented. See per-chunk reports in `docs/reports/`.

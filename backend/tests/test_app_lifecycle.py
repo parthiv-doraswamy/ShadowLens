@@ -9,9 +9,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-import pytest
-
 from fastapi.testclient import TestClient
+import pytest
 from sqlmodel import Session, select
 
 from app.bus.event_bus import EventPublisher
@@ -238,3 +237,39 @@ def test_unhandled_error_returns_generic_response_and_safe_log(
     assert "sensitive internal error text" not in output
     assert "http_request_failed" in output
     assert "RuntimeError" in output
+
+
+def test_cors_allows_only_configured_local_frontend(tmp_path: Path) -> None:
+    from app.config import Settings
+
+    settings = Settings(
+        _env_file=None,
+        data_dir=tmp_path / "cors",
+        cors_origins="http://localhost:5173",
+    )
+    app = create_app(
+        database_url=f"sqlite:///{tmp_path / 'cors.db'}",
+        token_path=tmp_path / "cors.token",
+        settings=settings,
+    )
+    with TestClient(app) as client:
+        allowed = client.options(
+            "/api/events",
+            headers={
+                "Origin": "http://localhost:5173",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "authorization,content-type",
+            },
+        )
+        assert allowed.status_code == 200
+        assert allowed.headers["access-control-allow-origin"] == "http://localhost:5173"
+        assert "access-control-allow-credentials" not in allowed.headers
+
+        rejected = client.options(
+            "/api/events",
+            headers={
+                "Origin": "https://attacker.example",
+                "Access-Control-Request-Method": "POST",
+            },
+        )
+        assert "access-control-allow-origin" not in rejected.headers

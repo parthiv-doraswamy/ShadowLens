@@ -14,13 +14,18 @@ def _default_token_path() -> Path:
     return data_dir / "access.token"
 
 
-def load_or_create_api_token(token_path: Path | None = None) -> str:
+def load_or_create_api_token(
+    token_path: Path | None = None,
+    *,
+    configured_token: str | None = None,
+) -> str:
     """Load an operator token or create a random, owner-only token on first run.
 
     SHADOWLENS_API_TOKEN is an explicit deployment override. Otherwise the token
     is stored in a 0600 file under the local ShadowLens data directory.
     """
-    configured_token = os.getenv("SHADOWLENS_API_TOKEN")
+    if configured_token is None:
+        configured_token = os.getenv("SHADOWLENS_API_TOKEN")
     if configured_token:
         if len(configured_token) < 32:
             raise ValueError("SHADOWLENS_API_TOKEN must contain at least 32 characters")
