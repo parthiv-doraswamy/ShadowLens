@@ -285,3 +285,6 @@ The master spec's milestone gates take precedence over any schedule estimate; th
 
 
 | Frontend dashboard page templates (Chunk 1.4) | Implemented: Overview, AI Inventory, Leak Alerts, Agent Graph, Compliance, Data Sources, Policy Studio and System & Privacy templates; all example records are synthetic, controls are local previews, and no backend/collector integration is claimed; see docs/reports/chunk_1_4_report.md |
+
+
+| Backend canonical domain contracts (Chunk 2.1 / M0.2) | Implemented: versioned Pydantic Event, Finding, AITool, Evidence, provenance and collection-coverage contracts; privacy-safe transient body reference and validation tests; see docs/reports/chunk_2_1_report.md. CI verification pending. |
