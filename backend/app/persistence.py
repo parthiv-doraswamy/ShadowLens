@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterator
 from uuid import UUID
 
-from sqlalchemy import Engine, event as sqlalchemy_event
+from sqlalchemy import Engine
+from sqlalchemy import event as sqlalchemy_event
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from app.models.contracts import AITool, Event, Finding
@@ -125,10 +126,9 @@ def _utc_now() -> str:
 
 def create_database_engine(database_url: str | None = None) -> Engine:
     """Create a SQLite engine with WAL, foreign keys and bounded busy wait."""
-    url = database_url or os.getenv(
-        "SHADOWLENS_DATABASE_URL",
-        f"sqlite:///{Path(os.getenv('SHADOWLENS_DB_PATH', '.shadowlens/shadowlens.db')).as_posix()}",
-    )
+    default_path = Path(os.getenv("SHADOWLENS_DB_PATH", ".shadowlens/shadowlens.db"))
+    default_url = f"sqlite:///{default_path.as_posix()}"
+    url = database_url or os.getenv("SHADOWLENS_DATABASE_URL", default_url)
     engine = create_engine(
         url, connect_args={"check_same_thread": False, "timeout": 5.0}, echo=False
     )

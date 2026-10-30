@@ -3,12 +3,19 @@ from uuid import uuid4
 
 import pytest
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from app.models.contracts import Event, Finding
 from app.persistence import (
-    EventRow, FindingEventRow, FindingRow, SchemaMigrationRow,
-    create_database_engine, get_event, initialize_database, save_event, save_finding,
+    FindingEventRow,
+    FindingRow,
+    SchemaMigrationRow,
+    create_database_engine,
+    get_event,
+    initialize_database,
+    save_event,
+    save_finding,
 )
 
 
@@ -109,7 +116,7 @@ def test_foreign_key_and_transaction_rollback(engine) -> None:
         session.commit()
     with Session(engine) as session:
         session.add(FindingEventRow(finding_id=str(uuid4()), event_id=str(event.event_id)))
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             session.commit()
         session.rollback()
         assert session.exec(select(FindingEventRow)).first() is None
