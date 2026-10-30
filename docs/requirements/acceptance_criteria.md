@@ -246,3 +246,11 @@ The end-to-end demo must replay S1–S10 in approximately 20 seconds offline usi
 ## 6. Definition of Done — section 22
 
 Release acceptance requires all P0 requirements to have IDs, implementation and passing tests; every finding source/tier/rule version/evidence; no encrypted-content overclaim; unknown endpoints provisional; OS coverage visible; raw secrets/prompts not persisted by default; LLM isolation; reproducible risk; safe upload validation/cleanup; safe synthetic simulator; API-backed dashboard actions; no-key core operation; reproducible clean install/demo; and README platform/permission/limitation/privacy documentation.
+
+
+### Implementation notes — Chunk 3.1 (REQ-DISC-001)
+- The registry is loaded from `backend/app/providers/providers.yaml` and can be atomically reloaded after full schema validation.
+- Classification consumes destination host, URL path, port, SNI, bounded headers, User-Agent and optional JSON top-level key names from an upstream bounded parser. It never consumes or retains body values.
+- Exact and wildcard DNS-label matching is boundary-aware; path/port-only clues cannot confirm a provider.
+- Unknown LLM-like request paths or JSON key shapes return `unknown_llm_api`, confidence `0.7`, and `provisional=true`.
+- Provider match evidence records signal types and safe descriptions only; secret-bearing header values are not copied into classification results.
