@@ -3,7 +3,7 @@
 **Source of truth:** `ShadowLens_Unified_Master_Specification.md`  
 **Specification version:** 1.0 (master implementation baseline)  
 **Extraction scope:** Complete document, 1,854 lines  
-**Register totals:** 50 unique `REQ-*` IDs · 15 `NOV-*` features · 9 NFRs · 16 REST endpoint rows · 10 simulator scenarios
+**Register totals:** 50 unique `REQ-*` IDs · 15 `NOV-*` features · 10 NFRs · 17 REST API method/path rows · 10 simulator scenarios
 
 ## 1. Source and interpretation rules
 
