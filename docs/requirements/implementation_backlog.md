@@ -282,3 +282,6 @@ The master spec's milestone gates take precedence over any schedule estimate; th
 | Frontend landing page (Chunk 1.2) | Implemented: responsive product landing page, CSS-only cinematic atmosphere, product capabilities, T1/T2/T3 visibility explanation, privacy principles and Playwright coverage; final CI verification pending; see docs/reports/chunk_1_2_report.md |
 
 | Frontend dashboard shell (Chunk 1.3) | Implemented: responsive analyst workspace, grouped route navigation, active state, collapsible desktop sidebar, mobile drawer and honest API-disconnected placeholders; CI/security verification pending; see docs/reports/chunk_1_3_report.md |
+
+
+| Frontend dashboard page templates (Chunk 1.4) | Implemented: Overview, AI Inventory, Leak Alerts, Agent Graph, Compliance, Data Sources, Policy Studio and System & Privacy templates; all example records are synthetic, controls are local previews, and no backend/collector integration is claimed; see docs/reports/chunk_1_4_report.md |
