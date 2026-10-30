@@ -6,7 +6,6 @@ from app.providers.registry import (
     ProviderDefinition,
     ProviderRegistry,
     Signal,
-    UnknownLLMBehavior,
     classify_request,
     default_registry,
 )
@@ -17,7 +16,6 @@ __all__ = [
     "ProviderDefinition",
     "ProviderRegistry",
     "Signal",
-    "UnknownLLMBehavior",
     "classify_request",
     "default_registry",
 ]
