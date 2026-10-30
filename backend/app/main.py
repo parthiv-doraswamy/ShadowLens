@@ -6,7 +6,6 @@ import secrets
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -139,9 +138,7 @@ def create_app(
 
     async def require_api_token(
         request: Request,
-        credentials: Annotated[
-            HTTPAuthorizationCredentials | None, Depends(bearer_scheme)
-        ],
+        credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     ) -> None:
         expected_token: str = request.app.state.api_token
         if credentials is None or not secrets.compare_digest(
