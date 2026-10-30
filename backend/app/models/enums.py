@@ -29,6 +29,7 @@ class AIKind(StrEnum):
     LOCAL = "local"
     GATEWAY = "gateway"
     UNKNOWN = "unknown"
+    UNKNOWN_LLM_API = "unknown_llm_api"
 
 
 class FindingCategory(StrEnum):

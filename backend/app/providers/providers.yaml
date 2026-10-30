@@ -1,0 +1,220 @@
+version: 1
+providers:
+  - id: openai
+    display_name: OpenAI
+    kind: cloud
+    hosts: [api.openai.com, "*.openai.com"]
+    paths: ["/v1/*"]
+    ports: [443]
+    sni: [api.openai.com, "*.openai.com"]
+    headers:
+      authorization: "^Bearer\\s+"
+    user_agents: [openai-python, openai-node]
+    min_score: 4
+  - id: anthropic
+    display_name: Anthropic
+    kind: cloud
+    hosts: [api.anthropic.com, "*.anthropic.com"]
+    paths: ["/v1/messages"]
+    ports: [443]
+    sni: [api.anthropic.com, "*.anthropic.com"]
+    headers:
+      anthropic-version: ".+"
+      x-api-key: "^sk-ant-"
+    user_agents: [anthropic-sdk]
+    min_score: 4
+  - id: google_gemini
+    display_name: Google Gemini / Vertex AI
+    kind: cloud
+    hosts: [generativelanguage.googleapis.com, "*.aiplatform.googleapis.com"]
+    paths: ["/v1beta/*", "/v1/*"]
+    ports: [443]
+    sni: [generativelanguage.googleapis.com, "*.aiplatform.googleapis.com"]
+    headers:
+      x-goog-api-key: ".+"
+    user_agents: [google-genai, google-api-python-client]
+    min_score: 4
+  - id: azure_openai
+    display_name: Azure OpenAI
+    kind: cloud
+    hosts: ["*.openai.azure.com", "*.cognitiveservices.azure.com"]
+    paths: ["/openai/*"]
+    ports: [443]
+    sni: ["*.openai.azure.com", "*.cognitiveservices.azure.com"]
+    headers:
+      api-key: ".+"
+    min_score: 4
+  - id: aws_bedrock
+    display_name: AWS Bedrock
+    kind: cloud
+    hosts: [bedrock-runtime.*.amazonaws.com, bedrock.*.amazonaws.com]
+    paths: ["/model/*"]
+    ports: [443]
+    sni: [bedrock-runtime.*.amazonaws.com, bedrock.*.amazonaws.com]
+    headers:
+      x-amz-date: ".+"
+    user_agents: [aws-sdk]
+    min_score: 4
+  - id: cohere
+    display_name: Cohere
+    kind: cloud
+    hosts: [api.cohere.com, "*.cohere.com"]
+    paths: ["/v1/*", "/v2/*"]
+    ports: [443]
+    sni: [api.cohere.com, "*.cohere.com"]
+    user_agents: [cohere-python, cohere-typescript]
+  - id: mistral
+    display_name: Mistral
+    kind: cloud
+    hosts: [api.mistral.ai, "*.mistral.ai"]
+    paths: ["/v1/*"]
+    ports: [443]
+    sni: [api.mistral.ai, "*.mistral.ai"]
+    user_agents: [mistral]
+  - id: perplexity
+    display_name: Perplexity
+    kind: cloud
+    hosts: [api.perplexity.ai, "*.perplexity.ai"]
+    paths: ["/chat/*"]
+    ports: [443]
+    sni: [api.perplexity.ai, "*.perplexity.ai"]
+    user_agents: [perplexity]
+  - id: groq
+    display_name: Groq
+    kind: cloud
+    hosts: [api.groq.com, "*.groq.com"]
+    paths: ["/openai/v1/*"]
+    ports: [443]
+    sni: [api.groq.com, "*.groq.com"]
+    user_agents: [groq]
+  - id: together
+    display_name: Together AI
+    kind: cloud
+    hosts: [api.together.xyz, "*.together.xyz"]
+    paths: ["/v1/*"]
+    ports: [443]
+    sni: [api.together.xyz, "*.together.xyz"]
+    user_agents: [together]
+  - id: fireworks
+    display_name: Fireworks AI
+    kind: cloud
+    hosts: [api.fireworks.ai, "*.fireworks.ai"]
+    paths: ["/inference/v1/*", "/v1/*"]
+    ports: [443]
+    sni: [api.fireworks.ai, "*.fireworks.ai"]
+    user_agents: [fireworks]
+  - id: featherless
+    display_name: Featherless AI
+    kind: cloud
+    hosts: [api.featherless.ai, "*.featherless.ai"]
+    paths: ["/v1/*"]
+    ports: [443]
+    sni: [api.featherless.ai, "*.featherless.ai"]
+    user_agents: [featherless]
+  - id: openrouter
+    display_name: OpenRouter
+    kind: cloud
+    hosts: [openrouter.ai, "*.openrouter.ai"]
+    paths: ["/api/v1/*"]
+    ports: [443]
+    sni: [openrouter.ai, "*.openrouter.ai"]
+    user_agents: [openrouter]
+  - id: huggingface_inference
+    display_name: Hugging Face Inference / Hub
+    kind: cloud
+    hosts: [api-inference.huggingface.co, router.huggingface.co, huggingface.co, "*.huggingface.co"]
+    paths: ["/models/*", "/api/*"]
+    ports: [443]
+    sni: [api-inference.huggingface.co, "*.huggingface.co"]
+    user_agents: [huggingface_hub, huggingface]
+  - id: replicate
+    display_name: Replicate
+    kind: cloud
+    hosts: [api.replicate.com, "*.replicate.com"]
+    paths: ["/v1/*"]
+    ports: [443]
+    sni: [api.replicate.com, "*.replicate.com"]
+    user_agents: [replicate]
+  - id: deepseek
+    display_name: DeepSeek
+    kind: cloud
+    hosts: [api.deepseek.com, "*.deepseek.com"]
+    paths: ["/v1/*"]
+    ports: [443]
+    sni: [api.deepseek.com, "*.deepseek.com"]
+    user_agents: [deepseek]
+  - id: xai
+    display_name: xAI
+    kind: cloud
+    hosts: [api.x.ai, "*.x.ai"]
+    paths: ["/v1/*"]
+    ports: [443]
+    sni: [api.x.ai, "*.x.ai"]
+    user_agents: [xai]
+  - id: ollama
+    display_name: Ollama
+    kind: local
+    hosts: [localhost, 127.0.0.1, "::1"]
+    paths: ["/api/*"]
+    ports: [11434]
+    sni: []
+    headers: {}
+    user_agents: [ollama]
+  - id: lm_studio
+    display_name: LM Studio
+    kind: local
+    hosts: [localhost, 127.0.0.1, "::1"]
+    paths: ["/v1/*", "/api/*"]
+    ports: [1234]
+    sni: []
+    user_agents: [lm-studio]
+  - id: llama_cpp
+    display_name: llama.cpp
+    kind: local
+    hosts: [localhost, 127.0.0.1, "::1"]
+    paths: ["/v1/*", "/completion"]
+    ports: [8080, 8000]
+    sni: []
+    headers: {}
+    user_agents: [llama.cpp, llama-server]
+  - id: vllm
+    display_name: vLLM
+    kind: local
+    hosts: [localhost, 127.0.0.1, "::1"]
+    paths: ["/v1/*"]
+    ports: [8000]
+    sni: []
+    headers: {}
+    user_agents: [vllm]
+  - id: cursor
+    display_name: Cursor
+    kind: cloud
+    hosts: [api2.cursor.sh, "*.cursor.sh", api.cursor.com]
+    paths: ["/aiserver.v1/*"]
+    ports: [443]
+    sni: ["*.cursor.sh", api.cursor.com]
+    user_agents: [cursor]
+  - id: github_copilot
+    display_name: GitHub Copilot
+    kind: cloud
+    hosts: [api.githubcopilot.com, copilot-proxy.githubusercontent.com]
+    paths: ["/inference/*", "/chat/*"]
+    ports: [443]
+    sni: [api.githubcopilot.com, copilot-proxy.githubusercontent.com]
+    user_agents: [github-copilot]
+  - id: codeium_windsurf
+    display_name: Codeium / Windsurf
+    kind: cloud
+    hosts: [server.codeium.com, "*.codeium.com", "*.windsurf.com"]
+    paths: ["/exa.*", "/v1/*"]
+    ports: [443]
+    sni: ["*.codeium.com", "*.windsurf.com"]
+    user_agents: [codeium, windsurf]
+  - id: tabnine
+    display_name: Tabnine
+    kind: cloud
+    hosts: [api.tabnine.com, "*.tabnine.com"]
+    paths: ["/v1/*"]
+    ports: [443]
+    sni: ["*.tabnine.com"]
+    user_agents: [tabnine]

@@ -2,7 +2,7 @@
 
 Local-first AI Shadow IT, sensitive-data exposure, and agent-governance auditing platform.
 
-> **Implementation status:** Bootstrap, canonical contracts, SQLite persistence, bounded event pipeline, authenticated metadata ingestion, structured logging, local CLI initialization and loopback API startup are implemented incrementally. Provider collectors, detection and dashboard-to-API integration are still in progress.
+> **Implementation status:** Bootstrap, canonical contracts, SQLite persistence, bounded event pipeline, authenticated metadata ingestion, structured logging, local CLI initialization and loopback API startup are implemented incrementally. The metadata-only provider registry/classifier (REQ-DISC-001) is implemented on its feature branch; process/socket and PCAP/HAR collectors, detection and dashboard-to-API integration remain in progress.
 
 ## Source of truth
 
