@@ -2,8 +2,8 @@
 
 **Source:** `ShadowLens_Unified_Master_Specification.md`, especially sections 15, 17, 20, 21 and 22.  
 **Planning model:** Section 17 milestone sequence M0–M8 is the primary detailed delivery order. Section 20 supplies vertical-slice phase gates A–G. The work-allocation prompt pack supplies chunk-sized execution sequencing.  
-**Current branch:** `main`  
-**Current state:** Chunks 0.1–0.4 and Chunk 1.1 are complete and verified by CI/security workflows; Chunks 1.2 landing page and 1.3 dashboard shell are implemented and verified by CI/security workflows. Product milestones are not complete.
+**Current branch:** `feat/provider-registry-req-disc-001` (Chunk 3.1 implementation branch; `main` remains unchanged pending review/CI).  
+**Current state:** Chunks 0.1–0.4, 1.1–1.4 and 2.1–2.6 are implemented. Chunk 3.1 (REQ-DISC-001 provider registry/classifier) is implemented on the current feature branch and awaiting pull-request CI. Provider collectors, REQ-DISC-002 sanction policy, detection and dashboard/API integration remain pending.
 
 ## 1. Delivery principles
 
@@ -356,3 +356,20 @@ Chunk 2.5 does not claim that third-party, host OS or process-supervisor logs ar
 | CLI still pending | scan, ingest, simulate, demo, bench, export and forget remain future implementation work |
 
 The generated policy.default.yaml is intentionally comments-only and does not represent an active or validated policy. Only init and serve are supported commands in this chunk. The official CLI enforces loopback binding; a direct custom Uvicorn invocation can bypass CLI bind validation and must not be treated as the recommended launch method.
+
+
+## 7. Current execution update — Chunk 3.1 (REQ-DISC-001)
+
+| Work package | State |
+|---|---|
+| Provider registry | Implemented in `backend/app/providers/providers.yaml`; 25 required cloud, local and developer-tool entries |
+| Signature dimensions | Exact/wildcard DNS hosts, URL paths, destination ports, SNI, bounded header fingerprints and User-Agent |
+| Classification | Deterministic weighted evidence; host/SNI and independent corroborating signals; safe evidence descriptions |
+| Unknown destinations | LLM-like paths or bounded JSON key names `messages`/`prompt` become `unknown_llm_api`, confidence 0.7, provisional; path/shape alone never confirms a named provider |
+| Hot reload | YAML schema validation occurs before atomic registry replacement; invalid reload preserves previous registry |
+| Privacy | No request body values are accepted; sensitive headers are excluded from Signal repr/serialization and matched values never appear in classification evidence |
+| Tests | Positive coverage for all 25 required provider IDs; negative generic/lookalike tests and a per-provider unrelated-host negative test; wildcard, unknown, malformed-registry and privacy-contract tests |
+| Dependency/package | PyYAML declared; YAML registry included in installed package data |
+| Verification | Pull-request CI pending; do not mark verified until backend tests/lint/typecheck and existing frontend/security workflows complete |
+
+**Chunk scope:** REQ-DISC-001 only. REQ-DISC-002 sanction policy and deduplication, REQ-DISC-003 config scanning, and REQ-DISC-004 browser-extension discovery remain separate chunks.
