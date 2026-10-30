@@ -3,7 +3,7 @@
 **Source:** `ShadowLens_Unified_Master_Specification.md`, especially sections 15, 17, 20, 21 and 22.  
 **Planning model:** Section 17 milestone sequence M0–M8 is the primary detailed delivery order. Section 20 supplies vertical-slice phase gates A–G. The work-allocation prompt pack supplies chunk-sized execution sequencing.  
 **Current branch:** `main`  
-**Current state:** Chunk 0.1 repository bootstrap completed; Chunk 0.2 specification and requirements documentation created. Product milestones are not complete.
+**Current state:** Chunks 0.1–0.4 planning, architecture and CI/security automation are complete or under verification. Product milestones are not complete.
 
 ## 1. Delivery principles
 
@@ -253,7 +253,7 @@ After this extraction chunk, the requested execution order remains:
 
 The master spec's milestone gates take precedence over any schedule estimate; these estimates are not delivery guarantees.
 
-## 6. Current repository execution status (after Chunk 0.3 audit)
+## 6. Current repository execution status (after Chunk 0.4 CI/security automation)
 
 | Item | State after Chunk 0.3 audit |
 |---|---|
@@ -263,11 +263,14 @@ The master spec's milestone gates take precedence over any schedule estimate; th
 | Implementation backlog | Complete |
 | Human approval gates | Complete |
 | Architecture and traceability (Chunk 0.3) | Complete and audited — 7 architecture documents + full traceability matrix; see docs/reports/chunk_0_3_report.md |
+| CI/security automation (Chunk 0.4) | Configured: backend Ruff/mypy/pytest; frontend typecheck/build/Playwright smoke; Gitleaks, Semgrep, CodeQL; weekly Dependabot. Latest workflow validation pending; see docs/reports/chunk_0_4_report.md |
 | Repository scaffold/CI | Complete for bootstrap scope |
 | M0 foundation | Partial only; see Chunk 0.1 report |
 | Product requirements REQ-* | Not implemented/verified yet |
 | Traceability matrix | Complete planning map; expands source section 16 excerpt to all 50 REQ IDs, 15 NOV IDs and 10 NFRs |
 
 **Chunk 0.3 status:** Architecture and traceability documents have been committed. No product architecture components have been implemented by this documentation chunk. The traceability matrix maps all 50 REQ IDs, 15 NOV IDs and 10 NFRs to planned ownership and tests.
+
+**Chunk 0.4 status:** CI and security automation configuration has been committed. The Playwright check currently covers only the bootstrap shell, not analyst workflows. Scanner execution and the latest workflow result must be checked before calling the automation fully validated.
 
 **Do not infer requirement completion from the presence of the repository scaffold or a passing bootstrap CI run.**
