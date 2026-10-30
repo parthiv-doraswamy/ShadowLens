@@ -19,4 +19,5 @@
 
 ## Validation
 - Playwright covers workspace navigation, active route, preview disclaimer and mobile navigation.
-- CI and security workflows must be checked on the final implementation commit before this chunk is marked verified.
+- First CI run exposed a missing accessible name on the workspace navigation landmark; this was corrected by adding the explicit navigation label.
+- CI and security workflows must be checked again on the corrected commit before this chunk is marked verified.

@@ -37,7 +37,7 @@ export default function DashboardShell({ path }: { path: string }) {
           <span><strong>Local workspace</strong><small>Personal environment</small></span>
           <span className="workspace-sidebar__chevron">⌄</span>
         </div>
-        <nav className="workspace-nav">
+        <nav className="workspace-nav" aria-label="Workspace navigation">
           {navigation.map(group => (
             <div className="workspace-nav__group" key={group.section}>
               <p className="workspace-nav__heading">{group.section}</p>
