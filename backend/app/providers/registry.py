@@ -29,6 +29,8 @@ class Signal(BaseModel):
     sni: str | None = Field(default=None, max_length=253)
     headers: dict[str, str] = Field(default_factory=dict, max_length=64)
     user_agent: str | None = Field(default=None, max_length=512)
+    # Keys only, extracted by an upstream bounded parser; values/body are never retained.
+    json_keys: list[str] = Field(default_factory=list, max_length=64)
 
     @field_validator("host", "sni")
     @classmethod
@@ -51,6 +53,11 @@ class Signal(BaseModel):
                 raise ValueError("header names and values must be strings")
             normalized[name.strip().lower()] = item[:512]
         return normalized
+
+    @field_validator("json_keys")
+    @classmethod
+    def normalize_json_keys(cls, values: list[str]) -> list[str]:
+        return [value.strip().lower()[:64] for value in values if isinstance(value, str)]
 
     @classmethod
     def from_url(
@@ -144,11 +151,16 @@ class ClassificationResult:
 def _host_matches(host: str | None, pattern: str) -> bool:
     if host is None:
         return False
-    # Exact and wildcard patterns are matched against DNS-label boundaries.
-    if pattern.startswith("*."):
-        suffix = pattern[2:]
-        return host != suffix and host.endswith("." + suffix)
-    return host == pattern
+    # Match wildcard labels independently: '*.example.com' cannot match
+    # 'notexample.com', and the AWS region wildcard is supported as well.
+    host_labels = host.split(".")
+    pattern_labels = pattern.split(".")
+    if len(host_labels) != len(pattern_labels):
+        return False
+    return all(
+        fnmatch.fnmatchcase(label, pattern_label)
+        for label, pattern_label in zip(host_labels, pattern_labels, strict=True)
+    )
 
 
 def _path_matches(path: str | None, pattern: str) -> bool:
@@ -239,9 +251,13 @@ class ProviderRegistry:
                 evidence=evidence,
             )
 
-        api_like = bool(signal.path and signal.path.lower() in {
+        api_like_path = bool(signal.path and signal.path.lower() in {
             "/v1/chat/completions", "/v1/messages", "/chat/completions"
         })
+        # Only key names supplied by a bounded upstream JSON parser are used.
+        # Payload values and raw body contents are deliberately not part of Signal.
+        api_like_shape = bool({"messages", "prompt"} & set(signal.json_keys))
+        api_like = api_like_path or api_like_shape
         if api_like:
             return ClassificationResult(
                 provider="unknown_llm_api",
@@ -250,7 +266,7 @@ class ProviderRegistry:
                 confidence=0.7,
                 matched=False,
                 provisional=True,
-                evidence=(MatchEvidence("path", "LLM-like path; provider identity is unconfirmed"),),
+                evidence=(MatchEvidence("path" if api_like_path else "json_keys", "LLM-like request shape; provider identity is unconfirmed"),),
             )
 
         return ClassificationResult(
