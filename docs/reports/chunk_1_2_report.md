@@ -27,4 +27,6 @@
 - No TLS MITM/decryption or passive HTTPS body inspection is claimed.
 
 ## Validation
-- CI runs frontend typecheck, production build, and Playwright smoke tests; results must be checked on the final commit before marking this chunk verified.
+- CI run `41090473977` passed: backend Ruff/mypy/pytest; frontend typecheck, production build, and Playwright browser smoke.
+- Security run `41090473840` passed: Gitleaks, Semgrep, CodeQL Python, and CodeQL JavaScript/TypeScript.
+- The chunk is verified on commit `9c293e5f442cf19a1f75ed37acad076f97341e45`.
