@@ -216,11 +216,11 @@ def test_signal_repr_and_serialization_do_not_expose_header_values() -> None:
 def test_invalid_header_regex_is_rejected_before_registry_activation(tmp_path: Path) -> None:
     invalid = tmp_path / "invalid-regex.yaml"
     invalid.write_text(
-        "version: 1\\nproviders:\\n"
-        "  - id: invalid_provider\\n"
-        "    display_name: Invalid\\n"
-        "    kind: cloud\\n"
-        "    headers: {x-test: '['}\\n",
+        "version: 1\nproviders:\n"
+        "  - id: invalid_provider\n"
+        "    display_name: Invalid\n"
+        "    kind: cloud\n"
+        "    headers: {x-test: '['}\n",
         encoding="utf-8",
     )
     with pytest.raises(ValidationError, match="invalid header fingerprint pattern"):
