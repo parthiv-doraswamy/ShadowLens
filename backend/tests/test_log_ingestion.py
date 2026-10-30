@@ -5,6 +5,7 @@ import json
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlmodel import Session, select
 
 from app.ingestion.logs import (
     MAX_IMPORT_BYTES,
@@ -12,6 +13,9 @@ from app.ingestion.logs import (
     parse_log_bytes,
 )
 from app.main import create_app
+from app.cli import CLIError, ingest_file
+from app.config import Settings
+from app.persistence import EventRow, create_database_engine
 
 
 def har_bytes(entries: list[dict[str, object]]) -> bytes:
@@ -182,3 +186,43 @@ def test_authenticated_multipart_api_queues_metadata_only(tmp_path) -> None:
         assert body["events_parsed"] == 1
         assert body["events_queued"] == 1
         assert body["format"] == "har"
+
+
+
+def test_cli_import_persists_metadata_only(tmp_path) -> None:
+    source = tmp_path / "capture.har"
+    source.write_bytes(har_bytes([har_entry()]))
+    data_dir = tmp_path / ".shadowlens"
+    settings = Settings(
+        _env_file=None,
+        data_dir=data_dir,
+        database_url=f"sqlite:///{data_dir / 'shadowlens.db'}",
+        cors_origins="",
+    )
+    result = ingest_file(settings, source)
+    assert result["events_imported"] == 1
+    engine = create_database_engine(settings.resolved_database_url)
+    try:
+        with Session(engine) as session:
+            rows = session.exec(select(EventRow)).all()
+            assert len(rows) == 1
+            assert "very-secret-body-value" not in rows[0].meta_json
+            assert "response-body-must-not-be-retained" not in rows[0].meta_json
+            assert "super-secret-token" not in rows[0].meta_json
+    finally:
+        engine.dispose()
+
+
+def test_cli_rejects_symlink_input(tmp_path) -> None:
+    real_file = tmp_path / "real.json"
+    real_file.write_text('{"url":"https://api.openai.com/v1/models"}')
+    link = tmp_path / "linked.json"
+    link.symlink_to(real_file)
+    settings = Settings(
+        _env_file=None,
+        data_dir=tmp_path / ".shadowlens",
+        database_url=f"sqlite:///{tmp_path / '.shadowlens' / 'shadowlens.db'}",
+        cors_origins="",
+    )
+    with pytest.raises(CLIError, match="non-symlink"):
+        ingest_file(settings, link)
