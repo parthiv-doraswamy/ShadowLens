@@ -88,6 +88,8 @@ def test_http_ingest_rejects_transient_body_reference(tmp_path: Path) -> None:
             headers={"Authorization": f"Bearer {app.state.api_token}"},
         )
         assert response.status_code == 422
+        assert "synthetic-raw-body-secret" not in response.text
+        assert '"input"' not in response.text
         with Session(app.state.database_engine) as session:
             assert session.get(EventRow, str(payload["event_id"])) is None
 

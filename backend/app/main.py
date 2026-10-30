@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -134,6 +135,20 @@ def create_app(
         openapi_url=None,
         lifespan=lifespan,
     )
+    @application.exception_handler(RequestValidationError)
+    async def sanitized_validation_error(
+        _request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        """Return schema errors without echoing untrusted request values."""
+        safe_errors: list[dict[str, object]] = []
+        for error in exc.errors():
+            safe_errors.append({
+                "loc": list(error["loc"]),
+                "msg": error["msg"],
+                "type": error["type"],
+            })
+        return JSONResponse(status_code=422, content={"detail": safe_errors})
+
     bearer_dependency = Depends(HTTPBearer(auto_error=False))
 
     async def require_api_token(
