@@ -21,6 +21,7 @@ providers:
       anthropic-version: ".+"
       x-api-key: "^sk-ant-"
     user_agents: [anthropic-sdk]
+    min_score: 4
   - id: google_gemini
     display_name: Google Gemini / Vertex AI
     kind: cloud
@@ -31,6 +32,7 @@ providers:
     headers:
       x-goog-api-key: ".+"
     user_agents: [google-genai, google-api-python-client]
+    min_score: 4
   - id: azure_openai
     display_name: Azure OpenAI
     kind: cloud
@@ -40,6 +42,7 @@ providers:
     sni: ["*.openai.azure.com", "*.cognitiveservices.azure.com"]
     headers:
       api-key: ".+"
+    min_score: 4
   - id: aws_bedrock
     display_name: AWS Bedrock
     kind: cloud
@@ -50,6 +53,7 @@ providers:
     headers:
       x-amz-date: ".+"
     user_agents: [aws-sdk]
+    min_score: 4
   - id: cohere
     display_name: Cohere
     kind: cloud
