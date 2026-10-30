@@ -288,3 +288,14 @@ The master spec's milestone gates take precedence over any schedule estimate; th
 
 
 | Backend canonical domain contracts (Chunk 2.1 / M0.2) | Implemented: versioned Pydantic Event, Finding, AITool, Evidence, provenance and collection-coverage contracts; privacy-safe transient body reference and validation tests; see docs/reports/chunk_2_1_report.md. CI verification pending. |
+
+
+## 7. Current execution update — Chunk 2.2
+
+| Work package | State |
+|---|---|
+| M0.2 canonical domain contracts (Chunk 2.1) | Implemented; CI and security workflows passed on commit a1a65c3 |
+| M0.3 SQLite/SQLModel schema and WAL foundation (Chunk 2.2) | Implemented in backend/app/persistence.py; migration marker, core tables, indexes, foreign keys, session transaction helper and persistence tests added; workflow verification pending |
+| M0 remaining | Bounded event bus, CLI/init/serve, local bearer token, DB-aware health and structured redacted logging remain outstanding |
+
+Chunk 2.2 is a persistence primitive only: it is not yet wired into the FastAPI lifecycle or ingest pipeline. No raw request-body table is defined, and transient body references are excluded from event serialization.
