@@ -10,6 +10,7 @@ providers:
     headers:
       authorization: "^Bearer\\s+"
     user_agents: [openai-python, openai-node]
+    min_score: 4
   - id: anthropic
     display_name: Anthropic
     kind: cloud
