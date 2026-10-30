@@ -7,7 +7,7 @@
 
 ## 1. Outcome
 
-<badge>Complete</badge>
+**Status: Complete**
 
 The required architecture baseline and traceability matrix were present in the repository at the start of this execution. They were audited against the complete root master specification and the Chunk 0.2 requirement catalog. The documents cover the requested architecture views and satisfy the planning-level traceability checks; no duplicate replacement documents were created.
 
