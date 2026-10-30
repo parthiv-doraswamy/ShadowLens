@@ -7,14 +7,14 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
+from app.cli import CLIError, ingest_file
+from app.config import Settings
 from app.ingestion.logs import (
     MAX_IMPORT_BYTES,
     ImportValidationError,
     parse_log_bytes,
 )
 from app.main import create_app
-from app.cli import CLIError, ingest_file
-from app.config import Settings
 from app.persistence import EventRow, create_database_engine
 
 
