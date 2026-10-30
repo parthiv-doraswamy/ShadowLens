@@ -27,7 +27,7 @@ class Signal(BaseModel):
     path: str | None = Field(default=None, max_length=2048)
     port: int | None = Field(default=None, ge=1, le=65535)
     sni: str | None = Field(default=None, max_length=253)
-    headers: dict[str, str] = Field(default_factory=dict, max_length=64)
+    headers: dict[str, str] = Field(default_factory=dict, max_length=64, repr=False, exclude=True)
     user_agent: str | None = Field(default=None, max_length=512)
     # Keys only, extracted by an upstream bounded parser; values/body are never retained.
     json_keys: list[str] = Field(default_factory=list, max_length=64)
@@ -117,7 +117,15 @@ class ProviderDefinition(BaseModel):
     @field_validator("headers")
     @classmethod
     def normalize_header_patterns(cls, values: dict[str, str]) -> dict[str, str]:
-        return {name.strip().lower(): pattern for name, pattern in values.items()}
+        normalized: dict[str, str] = {}
+        for name, pattern in values.items():
+            normalized_name = name.strip().lower()
+            try:
+                re.compile(pattern)
+            except re.error as exc:
+                raise ValueError(f"invalid header fingerprint pattern for {normalized_name}") from exc
+            normalized[normalized_name] = pattern
+        return normalized
 
 
 @dataclass(frozen=True)
