@@ -60,8 +60,8 @@ export default function DesignSystemPage() {
           <SectionHeading eyebrow="03 / FEEDBACK" title="Make system state explicit" description="Loading, empty, error and partial-coverage states are first-class interface components." />
           <div className="ds-state-grid">
             <Card><StatusPanel kind="loading" title="Loading inventory" description="Waiting for the local service to respond." /></Card>
-            <Card><StatusPanel kind="empty" title="No findings yet" description="No matching findings are available for this filter." action={<Button size="sm">Clear filters</Button>} /></Card>
-            <Card><StatusPanel kind="error" title="Could not load events" description="The local API did not respond. Existing evidence has not been changed." action={<Button size="sm" variant="secondary">Retry</Button>} /></Card>
+            <Card><StatusPanel kind="empty" title="No findings yet" description="No matching findings are available for this filter." action={<Button size="sm" disabled title="Unavailable in preview mode">Clear filters</Button>} /></Card>
+            <Card><StatusPanel kind="error" title="Could not load events" description="The local API did not respond. Existing evidence has not been changed." action={<Button size="sm" variant="secondary" disabled title="Unavailable until the API is connected">Retry</Button>} /></Card>
             <Card><StatusPanel kind="partial" title="Partial visibility" description="Process attribution is unavailable. Network metadata may still be collected." /></Card>
           </div>
         </section>
