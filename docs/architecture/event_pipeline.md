@@ -1,6 +1,6 @@
 # ShadowLens Event Pipeline Architecture
 
-**Status:** Canonical processing design; no event pipeline implemented yet.  
+**Status:** Canonical processing design; bounded queue, SQLite event persistence and metadata-event API wiring are implemented. Real collectors and downstream analysis stages remain planned.  
 **Source:** Master Specification sections 0, 4–6, 8, 9 and 20 Phase A–D.
 
 ## 1. Pipeline contract
@@ -54,7 +54,7 @@ Shutdown first closes intake, waits for all accepted queue items to be acknowled
 
 Collectors implement a narrow async protocol receiving an event publisher and cooperative stop event. The supervisor runs each collector independently, records the latest exception/restart count, and restarts unexpected exits with capped exponential backoff. One failing collector does not stop its peers. Collectors should check the stop event and return promptly during shutdown.
 
-The bus is a processing primitive, not yet connected to FastAPI, persistence, or a real collector. Queue capacity, worker count and any deployment-specific overflow policy must be selected and surfaced by application configuration before production use.
+The bus is connected to FastAPI and SQLite persistence through a canonical metadata-event intake route. The application configures queue capacity and worker count from environment settings. No production collector is enabled by default; the supervisor starts with an empty registry. The bus remains in-memory and is not crash-durable.
 
 ## 6. Payload lifecycle
 
@@ -67,3 +67,16 @@ A Finding links to one or more event IDs. Evidence records rule ID/version, sour
 ## 8. Replay and simulation
 
 Simulator input is synthetic and labelled. Replay traverses the same normalization/detection pipeline but must not execute shell commands, perform outbound exfiltration or plant canaries without explicit approval. Replay is read-only with respect to production records unless a user explicitly chooses a separate demo dataset.
+
+
+## 9. FastAPI lifecycle and metadata intake
+
+The application lifespan creates the SQLite engine, initializes the schema and first-run bearer token, starts the event bus, then starts the collector supervisor. Shutdown reverses the producer path: signal and await collectors first, close bus intake and drain accepted queue items second, and dispose the database engine last. Startup failure attempts cleanup before propagating the error.
+
+`GET /api/health` is unauthenticated as the explicit NFR-SEC-1 exception. It checks the database with `SELECT 1` and reports bus counters plus collector state; it does not disclose the token or token-file path. `POST /api/events` requires a bearer token and accepts an `IngestEvent` transport schema. That schema inherits canonical event validation but deliberately omits `http.body_ref`, bounds HTTP header/provenance counts and redacts sensitive headers before enqueueing. No raw request body or prompt is accepted by this endpoint.
+
+A `202` response confirms queue acceptance only. A worker persists the event metadata in its own transaction. Queue saturation returns a retryable `503`; database/handler failures increment the bus failure counter and cause health to report degraded status. The route does not implement multipart uploads: HAR, PCAP, JSONL and proxy-log parsers remain separate collector work.
+
+The token is generated using a cryptographically secure random value at first startup and stored in an owner-only file under the local data directory. Operators may provide an explicit `SHADOWLENS_API_TOKEN` override. API documentation and the generated OpenAPI document are also protected so `/api/health` remains the only unauthenticated route.
+
+The event bus is volatile. A process crash after queue acceptance but before a database commit can lose an event; the `202` response is not a durability guarantee.

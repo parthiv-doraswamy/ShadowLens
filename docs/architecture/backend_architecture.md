@@ -1,6 +1,6 @@
 # ShadowLens Backend Architecture
 
-**Status:** Design baseline; implementation is not implied.  
+**Status:** Design baseline with the M0 application lifecycle and canonical metadata-event intake implemented.  
 **Source:** Master Specification sections 2, 4–7, 8–11 and 20.
 
 ## 1. Backend stack
@@ -30,7 +30,7 @@ Python 3.11+, FastAPI/Uvicorn, asyncio with bounded asyncio.Queue, Pydantic v2, 
 | app/sim | Synthetic scenario fixtures and replay | Scenario → canonical event stream |
 | app/cli | init, serve, simulate/demo, benchmark and forget commands | Operator commands → services |
 
-This is a logical decomposition. The current repository has only a minimal FastAPI bootstrap; these packages are planned, not implemented.
+This is a logical decomposition. The repository currently implements the canonical contracts, SQLite persistence, bounded event bus, collector supervisor, FastAPI lifespan, local bearer-token boundary, DB-aware health and canonical metadata-event intake. The remaining packages are planned work, not implied by this slice.
 
 ## 3. Layering and import rules
 
@@ -79,6 +79,18 @@ Loopback binding, bearer token, restrictive CORS/CSP, restrictive token/database
 
 ## 9. Current implementation delta
 
-Implemented: FastAPI app bootstrap and process-level /api/v1/health endpoint only.  
-Not yet implemented: canonical models, storage, queue, collector protocols, services, API route inventory, auth, migrations, event pipeline and domain engines.  
-The current /api/v1/health route differs from the spec's /api/health and must be reconciled as a deliberate API-prefix decision in M0.
+Implemented:
+- Canonical Pydantic contracts, SQLite WAL persistence and the bounded async event bus.
+- FastAPI lifespan initializes the database, starts the bus and collector supervisor, then stops producers, drains accepted events and disposes the engine in that order.
+- `GET /api/health` reports database connectivity, queue counters and configured collector state. It is the explicit unauthenticated NFR-SEC-1 exception.
+- `POST /api/events` requires bearer authentication and accepts a validated metadata-only canonical event. HTTP request schemas deliberately exclude `http.body_ref`; sensitive headers are redacted before queueing and persistence.
+- First-run API token is generated locally and stored in `.shadowlens/access.token` with restrictive file/directory permissions. `SHADOWLENS_API_TOKEN` is an explicit operator override. API docs and OpenAPI are also protected.
+
+Not yet implemented: multipart HAR/JSONL/PCAP parsers, real source collectors, normalization/detection, list/query APIs, SSE, structured redacted logging, CLI commands, and the rest of the domain engines. The in-memory bus is not a durable queue: a process crash before a worker commits an accepted event can lose it. The server must be launched bound to `127.0.0.1`; the application factory does not enforce Uvicorn's bind address.
+
+The previous `/api/v1/health` bootstrap route was replaced by the source-specified `/api/health` path. The auth exception follows the explicit NFR-SEC-1 rule rather than the broad API heading.
+
+
+## 10. M0 application wiring boundary
+
+The metadata-event route is an integration seam, not a replacement for `POST /api/ingest` multipart support. Upload parsing and source-specific normalization remain in the provider/collector milestone. A successful `202` means the event entered the bounded in-memory queue; it does not claim durable commit. Health exposes accepted, processed, failed, rejected and queued counts so operators can distinguish queue acceptance from persistence completion.

@@ -1,0 +1,165 @@
+from __future__ import annotations
+
+import asyncio
+import json
+import os
+import stat
+import time
+from datetime import UTC, datetime
+from pathlib import Path
+from uuid import uuid4
+
+from fastapi.testclient import TestClient
+from sqlmodel import Session, select
+
+from app.bus.event_bus import EventPublisher
+from app.main import create_app
+from app.persistence import EventRow
+
+
+def make_payload() -> dict[str, object]:
+    return {
+        "event_id": str(uuid4()),
+        "ts": datetime.now(UTC).isoformat(),
+        "source": "socket",
+        "tier": "T1",
+        "host_id": "host-hash-test",
+        "raw_visibility": "metadata",
+        "net": {"dst_host": "api.example.test", "dst_port": 443, "proto": "tcp"},
+        "http": {
+            "method": "POST",
+            "path": "/v1/chat/completions",
+            "headers": {"Authorization": "Bearer example-sensitive-value"},
+        },
+    }
+
+
+def wait_for_persisted_event(app: object, event_id: str) -> EventRow:
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline:
+        with Session(app.state.database_engine) as session:  # type: ignore[attr-defined]
+            row = session.get(EventRow, event_id)
+            if row is not None:
+                return row
+        time.sleep(0.01)
+    raise AssertionError("event was accepted but not persisted before timeout")
+
+
+def test_ingest_requires_bearer_and_persists_redacted_event(tmp_path: Path) -> None:
+    app = create_app(
+        database_url=f"sqlite:///{tmp_path / 'ingest.db'}",
+        token_path=tmp_path / "access.token",
+    )
+    payload = make_payload()
+    event_id = str(payload["event_id"])
+
+    with TestClient(app) as client:
+        unauthorized = client.post("/api/events", json=payload)
+        assert unauthorized.status_code == 401
+
+        response = client.post(
+            "/api/events",
+            json=payload,
+            headers={"Authorization": f"Bearer {app.state.api_token}"},
+        )
+        assert response.status_code == 202
+        assert response.json() == {"status": "accepted", "event_id": event_id}
+
+        row = wait_for_persisted_event(app, event_id)
+        assert "example-sensitive-value" not in row.meta_json
+        assert "REDACTED" in row.meta_json
+        assert json.loads(row.meta_json)["http"]["headers"]["Authorization"] == "REDACTED"
+
+
+def test_http_ingest_rejects_transient_body_reference(tmp_path: Path) -> None:
+    app = create_app(
+        database_url=f"sqlite:///{tmp_path / 'body-ref.db'}",
+        token_path=tmp_path / "access.token",
+    )
+    payload = make_payload()
+    http = payload["http"]
+    assert isinstance(http, dict)
+    http["body_ref"] = "synthetic-raw-body-secret"
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/events",
+            json=payload,
+            headers={"Authorization": f"Bearer {app.state.api_token}"},
+        )
+        assert response.status_code == 422
+        with Session(app.state.database_engine) as session:
+            assert session.get(EventRow, str(payload["event_id"])) is None
+
+
+def test_docs_and_openapi_are_protected(tmp_path: Path) -> None:
+    app = create_app(
+        database_url=f"sqlite:///{tmp_path / 'docs.db'}",
+        token_path=tmp_path / "access.token",
+    )
+    with TestClient(app) as client:
+        assert client.get("/api/docs").status_code == 401
+        assert client.get("/api/openapi.json").status_code == 401
+        headers = {"Authorization": f"Bearer {app.state.api_token}"}
+        assert client.get("/api/docs", headers=headers).status_code == 200
+        schema = client.get("/api/openapi.json", headers=headers)
+        assert schema.status_code == 200
+        assert "/api/events" in schema.json()["paths"]
+
+
+def test_token_file_is_owner_only_and_stable_across_restarts(tmp_path: Path) -> None:
+    token_path = tmp_path / "secrets" / "access.token"
+    app = create_app(
+        database_url=f"sqlite:///{tmp_path / 'token.db'}",
+        token_path=token_path,
+    )
+    with TestClient(app):
+        first_token = app.state.api_token
+        assert len(first_token) >= 32
+        assert token_path.read_text(encoding="utf-8").strip() == first_token
+        if os.name != "nt":
+            assert stat.S_IMODE(token_path.stat().st_mode) == 0o600
+            assert stat.S_IMODE(token_path.parent.stat().st_mode) == 0o700
+
+    second_app = create_app(
+        database_url=f"sqlite:///{tmp_path / 'token.db'}",
+        token_path=token_path,
+    )
+    with TestClient(second_app):
+        assert second_app.state.api_token == first_token
+
+
+def test_shutdown_stops_collectors_then_drains_accepted_events(tmp_path: Path) -> None:
+    class OneEventCollector:
+        async def run(
+            self, publish: EventPublisher, stop_event: asyncio.Event
+        ) -> None:
+            from app.api_schemas import IngestEvent
+
+            await publish(IngestEvent.model_validate(make_payload()).to_event())
+            await stop_event.wait()
+
+    database_path = tmp_path / "shutdown.db"
+    app = create_app(
+        database_url=f"sqlite:///{database_path}",
+        token_path=tmp_path / "shutdown.token",
+        collectors={"one-event": OneEventCollector()},
+    )
+
+    with TestClient(app) as client:
+        deadline = time.monotonic() + 2.0
+        while app.state.event_bus.stats().accepted < 1 and time.monotonic() < deadline:
+            time.sleep(0.01)
+        health = client.get("/api/health").json()
+        assert health["collectors"]["status"] == "running"
+        assert health["event_bus"]["accepted"] == 1
+
+    from app.persistence import create_database_engine, initialize_database
+
+    engine = create_database_engine(f"sqlite:///{database_path}")
+    try:
+        initialize_database(engine)
+        with Session(engine) as session:
+            assert session.exec(select(EventRow)).first() is not None
+    finally:
+        engine.dispose()

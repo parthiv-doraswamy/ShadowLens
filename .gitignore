@@ -18,6 +18,8 @@ playwright-report/
 test-results/
 
 # Local configuration and data
+.shadowlens/
+*.token
 .env
 .env.*
 !.env.example

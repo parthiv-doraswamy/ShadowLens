@@ -295,7 +295,7 @@ The master spec's milestone gates take precedence over any schedule estimate; th
 | Work package | State |
 |---|---|
 | M0.2 canonical domain contracts (Chunk 2.1) | Implemented; CI and security workflows passed on commit a1a65c3 |
-| M0.3 SQLite/SQLModel schema and WAL foundation (Chunk 2.2) | Implemented in backend/app/persistence.py; migration marker, core tables, indexes, foreign keys, session transaction helper and persistence tests added; workflow verification pending |
+| M0.3 SQLite/SQLModel schema and WAL foundation (Chunk 2.2) | Implemented in backend/app/persistence.py; migration marker, core tables, indexes, foreign keys, session transaction helper and persistence tests added; CI/security passed after follow-up fixes |
 | M0 remaining | Bounded event bus, CLI/init/serve, local bearer token, DB-aware health and structured redacted logging remain outstanding |
 
 Chunk 2.2 is a persistence primitive only: it is not yet wired into the FastAPI lifecycle or ingest pipeline. No raw request-body table is defined, and transient body references are excluded from event serialization.
@@ -307,7 +307,23 @@ Chunk 2.2 is a persistence primitive only: it is not yet wired into the FastAPI 
 |---|---|
 | M0.2 canonical domain contracts (Chunk 2.1) | Implemented; CI and security workflows passed on a1a65c3 |
 | M0.3 SQLite/SQLModel schema and WAL foundation (Chunk 2.2) | Implemented; CI/security workflow status tracked on commit aaf0ac1 |
-| M0.4 bounded asynchronous event bus (Chunk 2.3) | Implemented: bounded queue, awaitable backpressure, explicit nonblocking rejection, counters, worker isolation/drain and collector supervision with capped restart backoff; tests added; verification pending |
-| M0.5–M0.6 | Local bearer token, protected API baseline, DB-aware health, structured redacted logs and full M0 end-to-end integration remain outstanding |
+| M0.4 bounded asynchronous event bus (Chunk 2.3) | Implemented: bounded queue, awaitable backpressure, explicit nonblocking rejection, counters, worker isolation/drain and collector supervision with capped restart backoff; CI/security passed on commit 5d0a63d |
+| M0.5–M0.6 | Chunk 2.4 implements local bearer-token auth, protected metadata intake and DB-aware health; structured redacted logging and CLI work remain outstanding |
 
 Chunk 2.3 does not connect collectors to FastAPI or persistence. Queue capacity and worker count are constructor-configurable; deployment configuration and health/API exposure are later integration work.
+
+
+## 8. Current execution update — Chunk 2.4
+
+| Work package | State |
+|---|---|
+| M0.3 SQLite persistence | Integrated into FastAPI application lifespan; initialization is idempotent and database connections are disposed after queue drain |
+| M0.4 event bus / collector supervision | Integrated; collectors stop before bus shutdown, and the bus drains accepted work before database disposal |
+| M0.5 local bearer token and protected API | Implemented: first-run random token file, owner-only permissions, constant-time comparison, authenticated event intake, docs and OpenAPI |
+| M0.5 health and ingestion vertical slice | Implemented: unauthenticated `GET /api/health` checks DB and reports bus/collector status; authenticated `POST /api/events` accepts canonical metadata events |
+| M0.6 structured redacted logging | Still outstanding; this chunk does not claim request/log secret-redaction coverage |
+| M0 remaining | CLI `init/serve`, real collectors, multipart HAR/JSONL/PCAP parsing, normalizer/detectors, SSE and broader API inventory remain outstanding |
+
+Chunk 2.4 deliberately keeps raw bodies out of the HTTP ingestion contract: the request-specific schema has no `body_ref` field, and sensitive HTTP headers are redacted before persistence. Queue acceptance returns `202`, not a durable-commit guarantee; the event bus is in-memory and may lose queued work if the process terminates before persistence completes. No real collector is configured by default.
+
+The API route follows the source's `/api` prefix and `/api/health` NFR-SEC-1 exception. The former bootstrap `/api/v1/health` path is no longer used. Multipart upload support remains assigned to the provider/collector milestone, not this application-wiring chunk.
