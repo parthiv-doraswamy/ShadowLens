@@ -253,7 +253,7 @@ After this extraction chunk, the requested execution order remains:
 
 The master spec's milestone gates take precedence over any schedule estimate; these estimates are not delivery guarantees.
 
-## 6. Current repository execution status
+## 6. Current repository execution status (after Chunk 0.3 audit)
 
 | Item | State after Chunk 0.2 |
 |---|---|
@@ -262,7 +262,7 @@ The master spec's milestone gates take precedence over any schedule estimate; th
 | Acceptance criteria | Complete |
 | Implementation backlog | Complete |
 | Human approval gates | Complete |
-| Architecture and traceability (Chunk 0.3) | Complete — 7 architecture documents + full traceability matrix |
+| Architecture and traceability (Chunk 0.3) | Complete and audited — 7 architecture documents + full traceability matrix; see docs/reports/chunk_0_3_report.md |
 | Repository scaffold/CI | Complete for bootstrap scope |
 | M0 foundation | Partial only; see Chunk 0.1 report |
 | Product requirements REQ-* | Not implemented/verified yet |
