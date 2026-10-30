@@ -41,11 +41,22 @@ def test_log_processor_redacts_sensitive_keys_and_credential_patterns() -> None:
 
 
 def test_log_processor_bounds_depth_strings_and_collections() -> None:
-    value = {"deep": {"deeper": {"deepest": {"beyond": "not emitted"}}}}
+    value = {
+        "deep": {
+            "deeper": {
+                "deepest": {
+                    "beyond": {"still_beyond": "not emitted"}
+                }
+            }
+        }
+    }
     value["items"] = list(range(40))
     value["long"] = "x" * 600
     processed = redact_log_fields(None, "info", value)
-    assert processed["deep"]["deeper"]["deepest"]["beyond"] == "[TRUNCATED]"
+    assert (
+        processed["deep"]["deeper"]["deepest"]["beyond"]["still_beyond"]
+        == "[TRUNCATED]"
+    )
     assert len(processed["items"]) == 33
     assert processed["items"][-1] == "[TRUNCATED]"
     assert len(processed["long"]) == 513
