@@ -255,7 +255,7 @@ The master spec's milestone gates take precedence over any schedule estimate; th
 
 ## 6. Current repository execution status (after Chunk 0.3 audit)
 
-| Item | State after Chunk 0.2 |
+| Item | State after Chunk 0.3 audit |
 |---|---|
 | Root master spec copied into repository | Complete |
 | Requirements catalog | Complete |
