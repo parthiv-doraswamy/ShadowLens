@@ -262,9 +262,12 @@ The master spec's milestone gates take precedence over any schedule estimate; th
 | Acceptance criteria | Complete |
 | Implementation backlog | Complete |
 | Human approval gates | Complete |
+| Architecture and traceability (Chunk 0.3) | Complete — 7 architecture documents + full traceability matrix |
 | Repository scaffold/CI | Complete for bootstrap scope |
 | M0 foundation | Partial only; see Chunk 0.1 report |
 | Product requirements REQ-* | Not implemented/verified yet |
 | Traceability matrix | Created in next Chunk 0.3; source section 16 currently only has an excerpt |
+
+**Chunk 0.3 status:** Architecture and traceability documents have been committed. No product architecture components have been implemented by this documentation chunk. The traceability matrix maps all 50 REQ IDs, 15 NOV IDs and 10 NFRs to planned ownership and tests.
 
 **Do not infer requirement completion from the presence of the repository scaffold or a passing bootstrap CI run.**
