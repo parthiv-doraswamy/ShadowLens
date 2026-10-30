@@ -8,7 +8,7 @@ from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -23,6 +23,7 @@ from structlog.contextvars import bind_contextvars, clear_contextvars
 from app.api_schemas import IngestEvent
 from app.bus.event_bus import Collector, CollectorSupervisor, EventBus
 from app.config import Settings
+from app.ingestion.logs import ImportValidationError, MAX_IMPORT_BYTES, parse_log_bytes
 from app.models.contracts import Event
 from app.observability import configure_structured_logging, get_logger
 from app.persistence import (
@@ -309,6 +310,55 @@ def create_app(
             "collectors": {"status": collector_state, "items": collector_items},
         }
         return JSONResponse(status_code=200 if healthy else 503, content=payload)
+
+    @application.post(
+        "/api/ingest",
+        status_code=202,
+        tags=["ingestion"],
+        dependencies=[Depends(require_api_token)],
+    )
+    async def ingest_log_file(
+        request: Request,
+        file: UploadFile = File(...),
+    ) -> dict[str, object]:
+        """Import HAR/JSON/JSONL metadata; request and response bodies are discarded."""
+        filename = file.filename or ""
+        data = bytearray()
+        try:
+            while chunk := await file.read(64 * 1024):
+                if len(data) + len(chunk) > MAX_IMPORT_BYTES:
+                    raise HTTPException(
+                        status_code=413,
+                        detail="import exceeds the 25 MiB size limit",
+                    )
+                data.extend(chunk)
+            report = parse_log_bytes(filename, bytes(data))
+        except ImportValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from None
+        finally:
+            await file.close()
+
+        event_bus: EventBus = request.app.state.event_bus
+        accepted = 0
+        for event in report.events:
+            try:
+                await event_bus.publish(event, timeout=publish_timeout)
+            except TimeoutError:
+                break
+            except RuntimeError:
+                break
+            accepted += 1
+        return {
+            "status": "accepted" if accepted == report.imported else "partial",
+            "format": report.format,
+            "records_seen": report.records_seen,
+            "events_parsed": report.imported,
+            "events_queued": accepted,
+            "issues": [
+                {"record": issue.record, "code": issue.code}
+                for issue in report.issues
+            ],
+        }
 
     @application.post(
         "/api/events",
