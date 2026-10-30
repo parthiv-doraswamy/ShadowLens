@@ -75,14 +75,14 @@
 **Work packages**
 - M2.1 Versioned/hot-reloadable provider registry with required provider coverage, positive/negative tests and unknown provisional classification.
 - M2.2 Socket/process metadata adapter with permission degradation, process-exit/race handling and coverage.
-- M2.3 HAR/mitmproxy JSON/nginx-squid JSONL/mock-log parser with safe upload validation and redaction handoff.
+- M2.3 HAR/mitmproxy JSON/nginx-squid JSONL/mock-log parser with safe upload validation and redaction handoff. Initial metadata-only parser/API/CLI implementation is in Chunk 3.2; transient body-to-inspector handoff remains pending.
 - M2.4 Offline PCAP parsing for TCP flows, DNS, TLS ClientHello SNI/ALPN and plaintext HTTP; no TLS body claims.
 - M2.5 Provider sanction policy and 24-hour finding deduplication.
 - M2.6 Local LLM port detection and visibility/source-mode indicators.
 
 **Exit gate:** Positive/negative provider tests pass; local model endpoints identified from configured indicators; unknown endpoints remain provisional; permission failures visible and isolated.
 
-### M3 — Agent analysis (source estimate: 1.5 days)
+**Chunk 3.2 status:** parser, authenticated multipart API and local CLI import implemented; CI verification pending. Imported bodies are discarded, not inspected yet.\n\n### M3 — Agent analysis (source estimate: 1.5 days)
 
 **Deliverables**
 - Tool-call extractors.
