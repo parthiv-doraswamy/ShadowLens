@@ -1,7 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap");
-
 :root {
-  font-family: "DM Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Aptos", "Segoe UI", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #eae8e0;
   background: #111820;
   font-synthesis: none;
@@ -34,7 +32,7 @@ a { color: inherit; }
 
 .bootstrap { display: grid; min-height: 100vh; align-content: center; justify-items: center; gap: 1rem; padding: 2rem; text-align: center; }
 .eyebrow { margin: 0; color: var(--sl-amber); font-size: .75rem; font-weight: 700; letter-spacing: .16em; }
-.bootstrap h1 { margin: 0; font: 800 clamp(3rem, 9vw, 6rem)/1 "Manrope", sans-serif; letter-spacing: -.06em; }
+.bootstrap h1 { margin: 0; font: 800 clamp(3rem, 9vw, 6rem)/1 "Aptos Display", "Segoe UI", sans-serif; letter-spacing: -.06em; }
 .message { max-width: 34rem; margin: 0; color: #b8c0be; line-height: 1.7; }
 .status { margin-top: .5rem; border: 1px solid var(--sl-slate); border-radius: 999px; padding: .45rem .8rem; color: var(--sl-paper); font-size: .8rem; }
 .bootstrap-link { color: #e3b36f; font-size: .9rem; text-decoration: none; }
@@ -51,7 +49,7 @@ a { color: inherit; }
 .ds-topbar__meta a:hover { color: var(--sl-paper); }
 .ds-layout { display: grid; max-width: 1600px; grid-template-columns: 220px minmax(0,1fr); margin: 0 auto; }
 .ds-sidebar { position: sticky; top: 68px; display: flex; height: calc(100vh - 68px); flex-direction: column; gap: 7px; border-right: 1px solid var(--sl-line); padding: 34px 22px; }
-.ds-sidebar__label, .sl-eyebrow { margin: 0; color: #c58b45; font: 500 .68rem "DM Mono", monospace; letter-spacing: .12em; }
+.ds-sidebar__label, .sl-eyebrow { margin: 0; color: #c58b45; font: 500 .68rem "SFMono-Regular", Consolas, monospace; letter-spacing: .12em; }
 .ds-sidebar a { border-left: 2px solid transparent; padding: 9px 10px; color: #a9b2af; font-size: .83rem; text-decoration: none; }
 .ds-sidebar a:hover, .ds-sidebar a.is-current { border-left-color: var(--sl-amber); color: var(--sl-paper); background: rgba(255,255,255,.035); }
 .ds-sidebar__note { display: flex; align-items: center; gap: 10px; margin-top: auto; color: #82918d; font-size: .72rem; }
