@@ -37,8 +37,8 @@ test("all analyst page templates render with synthetic-data disclaimers", async 
 test("inventory filters and detail preview are interactive", async ({ page }) => {
   await page.goto("/app/inventory");
   await page.getByLabel("Filter inventory").fill("ollama");
-  await expect(page.getByText("Ollama", {exact:true})).toBeVisible();
-  await expect(page.getByText("Cursor", {exact:true})).toHaveCount(0);
+  await expect(page.getByRole("row").filter({hasText:"Ollama"})).toBeVisible();
+  await expect(page.getByRole("row").filter({hasText:"Cursor"})).toHaveCount(0);
   await page.getByRole("button", {name:"Details"}).click();
   await expect(page.getByText("Sample detail · Ollama")).toBeVisible();
   await page.getByRole("button", {name:"Close details"}).click();
