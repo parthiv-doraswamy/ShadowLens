@@ -11,7 +11,13 @@ import uvicorn
 from pydantic import ValidationError
 
 from app.config import Settings, validate_loopback_host
-from app.persistence import create_database_engine, initialize_database
+from app.ingestion.logs import ImportValidationError, parse_log_bytes
+from app.persistence import (
+    create_database_engine,
+    initialize_database,
+    save_event,
+    session_scope,
+)
 from app.security import load_or_create_api_token
 
 DEFAULT_POLICY_STARTER = """# ShadowLens default policy starter.
@@ -109,6 +115,39 @@ def run_server(
     )
 
 
+def ingest_file(settings: Settings, source: Path) -> dict[str, object]:
+    """Import a supported local export and persist only normalized metadata."""
+    path = source.expanduser()
+    if path.is_symlink() or not path.is_file():
+        raise CLIError("input must be a regular, non-symlink file")
+    from app.ingestion.logs import MAX_IMPORT_BYTES
+
+    if path.stat().st_size > MAX_IMPORT_BYTES:
+        raise CLIError("import exceeds the 25 MiB size limit")
+    try:
+        report = parse_log_bytes(path.name, path.read_bytes())
+    except ImportValidationError as exc:
+        raise CLIError(str(exc)) from None
+
+    engine = create_database_engine(settings.resolved_database_url)
+    try:
+        initialize_database(engine)
+        with session_scope(engine) as session:
+            for event in report.events:
+                save_event(session, event)
+    finally:
+        engine.dispose()
+    return {
+        "format": report.format,
+        "records_seen": report.records_seen,
+        "events_imported": report.imported,
+        "issues": [
+            {"record": issue.record, "code": issue.code}
+            for issue in report.issues
+        ],
+    }
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="shadowlens",
@@ -121,6 +160,13 @@ def _build_parser() -> argparse.ArgumentParser:
         help="create the local data directory, API token, SQLite database and policy starter",
     )
     init_parser.set_defaults(action="init")
+
+    ingest_parser = commands.add_parser(
+        "ingest",
+        help="import a HAR, mitmproxy JSON, nginx/squid JSONL or ShadowLens log export",
+    )
+    ingest_parser.add_argument("file", type=Path, help="supported local export file")
+    ingest_parser.set_defaults(action="ingest")
 
     serve_parser = commands.add_parser(
         "serve",
@@ -165,6 +211,16 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         settings = Settings()
+        if args.action == "ingest":
+            result = ingest_file(settings, args.file)
+            print(
+                f"Imported {result['events_imported']} events "
+                f"from {result['records_seen']} records ({result['format']})."
+            )
+            if result["issues"]:
+                print(f"Skipped {len(result['issues'])} malformed/invalid records.")
+            return 0
+
         if args.action == "init":
             result = initialize_local_state(settings)
             print(f"ShadowLens local state initialized: {result['data_dir']}")

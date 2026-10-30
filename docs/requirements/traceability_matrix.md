@@ -18,7 +18,7 @@
 |---|---|---|---|---|
 | REQ-COL-001 | collectors/socket | 2.3 / M2 | tests/integration/test_socket.py | Inventory + health partial-visibility badge |
 | REQ-COL-002 | collectors/pcap | 2.4 / M2 | tests/integration/test_pcap.py | Ingest page, T1/T3 event evidence |
-| REQ-COL-003 | collectors/logs | 2.3 / M2 | tests/integration/test_log_ingest.py | Imported event/finding list |
+| REQ-COL-003 | backend/app/ingestion/logs.py | 3.2 / M2.3 | backend/tests/test_log_ingestion.py | Authenticated multipart `/api/ingest` and `shadowlens ingest`; T1 metadata events |
 | REQ-COL-004 | collectors/loopback | 9.3 / M6 | tests/integration/test_loopback.py | Ingest coverage and permission status |
 | REQ-COL-005 | collectors/gateway | 9.4 / M6 | tests/integration/test_gateway.py | Gateway setup/status panel |
 | REQ-COL-006 | collectors/agent_hooks | 3.1 / M3 | tests/integration/test_agent_adapters.py | Agent activity inventory |

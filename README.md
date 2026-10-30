@@ -2,7 +2,7 @@
 
 Local-first AI Shadow IT, sensitive-data exposure, and agent-governance auditing platform.
 
-> **Implementation status:** Bootstrap, canonical contracts, SQLite persistence, bounded event pipeline, authenticated metadata ingestion, structured logging, local CLI initialization and loopback API startup are implemented incrementally. The metadata-only provider registry/classifier (REQ-DISC-001) is implemented on its feature branch; process/socket and PCAP/HAR collectors, detection and dashboard-to-API integration remain in progress.
+> **Implementation status:** Bootstrap, canonical contracts, SQLite persistence, bounded event pipeline, authenticated metadata ingestion, structured logging, local CLI initialization, provider registry (REQ-DISC-001) and metadata-only HAR/JSON/JSONL import (REQ-COL-003) are implemented incrementally. Live process/socket and PCAP collectors, content inspection/detection, and dashboard-to-API integration remain in progress.
 
 ## Source of truth
 
@@ -37,7 +37,7 @@ shadowlens serve
 
 The API binds to `127.0.0.1:8000` by default. Its unauthenticated health check is [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health). Operational API routes require the bearer token stored in the owner-only `.shadowlens/access.token` file. Do not paste the token into logs, tickets or source control.
 
-The CLI currently supports `init` and `serve`. `serve --live` and `serve --gateway` fail closed because those adapters are not implemented yet. The initial policy file is an inert starter; there is no active policy evaluator yet.
+The CLI supports `init`, `serve` and `ingest <file>`. The importer accepts HAR, mitmproxy JSON, nginx/squid-style JSONL and ShadowLens normalized mock-log JSON. It emits T1 metadata only, redacts sensitive headers and discards request/response bodies. The initial upload cap is 25 MiB and the record cap is 10,000. Bodies are not yet routed to a detector/inspector. `serve --live` and `serve --gateway` fail closed because those adapters are not implemented yet. The initial policy file is an inert starter; there is no active policy evaluator yet.
 
 ### Configuration
 
