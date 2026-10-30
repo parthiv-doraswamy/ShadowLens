@@ -127,23 +127,23 @@ def _request_parts(record: dict[str, Any], source_format: str) -> tuple[dict[str
     else:
         request = record
         url = record.get("url")
+        request_line = record.get("request")
+        method = record.get("method") or record.get("request_method")
+        path = record.get("path") or record.get("uri") or record.get("request_uri") or "/"
+        if isinstance(request_line, str):
+            parts = request_line.split()
+            if len(parts) >= 2:
+                method = method or parts[0]
+                if not record.get("request_uri") and not record.get("uri"):
+                    path = parts[1]
         if not isinstance(url, str):
             host = record.get("host") or record.get("hostname") or record.get("server")
-            path = record.get("path") or record.get("uri") or record.get("request_uri") or "/"
             scheme = record.get("scheme") or ("https" if record.get("ssl") else "http")
             port = record.get("port")
             if isinstance(host, str):
                 default_port = 443 if scheme == "https" else 80
                 url = f"{scheme}://{host}:{port or default_port}{path}"
         headers = record.get("headers") or record.get("request_headers")
-        method = record.get("method") or record.get("request_method")
-        request_line = record.get("request")
-        if isinstance(request_line, str):
-            parts = request_line.split()
-            if len(parts) >= 2:
-                method = method or parts[0]
-                if not record.get("request_uri") and not record.get("uri"):
-                    record = {**record, "path": parts[1]}
         started = (
             record.get("ts") or record.get("timestamp") or record.get("@timestamp")
             or record.get("time") or record.get("startedDateTime")
