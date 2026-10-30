@@ -123,7 +123,9 @@ class ProviderDefinition(BaseModel):
             try:
                 re.compile(pattern)
             except re.error as exc:
-                raise ValueError(f"invalid header fingerprint pattern for {normalized_name}") from exc
+                raise ValueError(
+                    f"invalid header fingerprint pattern for {normalized_name}"
+                ) from exc
             normalized[normalized_name] = pattern
         return normalized
 
@@ -146,7 +148,9 @@ class ClassificationResult:
     provisional: bool
     evidence: tuple[MatchEvidence, ...] = field(default_factory=tuple)
 
-    def to_ai_context(self, *, model: str | None = None, sanctioned: bool | None = None) -> dict[str, Any]:
+    def to_ai_context(
+        self, *, model: str | None = None, sanctioned: bool | None = None
+    ) -> dict[str, Any]:
         """Return a payload compatible with the existing AIContext contract."""
         return {
             "provider": self.provider,
@@ -216,29 +220,44 @@ class ProviderRegistry:
             evidence: list[MatchEvidence] = []
             if any(_host_matches(signal.host, pattern) for pattern in provider.hosts):
                 score += 4
-                evidence.append(MatchEvidence("host", "destination host matched provider signature"))
+                evidence.append(
+                    MatchEvidence("host", "destination host matched provider signature")
+                )
             if any(_host_matches(signal.sni, pattern) for pattern in provider.sni):
                 score += 4
-                evidence.append(MatchEvidence("sni", "TLS SNI matched provider signature"))
-            matching_paths = [pattern for pattern in provider.paths if _path_matches(signal.path, pattern)]
+                    evidence.append(
+                    MatchEvidence("sni", "TLS SNI matched provider signature")
+                )
+            matching_paths = [
+                pattern for pattern in provider.paths
+                if _path_matches(signal.path, pattern)
+            ]
             if matching_paths:
                 score += 1
                 evidence.append(MatchEvidence("path", "request path matched provider signature"))
             if signal.port is not None and signal.port in provider.ports:
                 score += 1
-                evidence.append(MatchEvidence("port", "destination port matched provider signature"))
+                evidence.append(
+                    MatchEvidence("port", "destination port matched provider signature")
+                )
             for header_name, pattern in provider.headers.items():
                 value = signal.headers.get(header_name)
-                if value is not None and re.search(pattern, _safe_header_value(value), re.IGNORECASE):
+                if value is not None and re.search(
+                    pattern, _safe_header_value(value), re.IGNORECASE
+                ):
                     score += 3
-                    evidence.append(MatchEvidence("header", f"{header_name} matched provider signature"))
+                    evidence.append(
+                        MatchEvidence("header", f"{header_name} matched provider signature")
+                    )
             if provider.user_agents and signal.user_agent:
                 if any(
                     token.lower() in signal.user_agent.lower()
                     for token in provider.user_agents
                 ):
                     score += 2
-                    evidence.append(MatchEvidence("user_agent", "User-Agent matched provider signature"))
+                    evidence.append(
+                        MatchEvidence("user_agent", "User-Agent matched provider signature")
+                    )
             if score >= provider.min_score:
                 scored.append((score, provider, tuple(evidence)))
 
@@ -274,7 +293,12 @@ class ProviderRegistry:
                 confidence=0.7,
                 matched=False,
                 provisional=True,
-                evidence=(MatchEvidence("path" if api_like_path else "json_keys", "LLM-like request shape; provider identity is unconfirmed"),),
+                evidence=(
+                    MatchEvidence(
+                        "path" if api_like_path else "json_keys",
+                        "LLM-like request shape; provider identity is unconfirmed",
+                    ),
+                ),
             )
 
         return ClassificationResult(
