@@ -218,7 +218,16 @@ class ProviderRegistry:
         for provider in self._providers:
             score = 0
             evidence: list[MatchEvidence] = []
-            if any(_host_matches(signal.host, pattern) for pattern in provider.hosts):
+            host_match = any(
+                _host_matches(signal.host, pattern) for pattern in provider.hosts
+            )
+            # Loopback is shared by unrelated local services. A local provider
+            # host is useful only when its configured service port corroborates it.
+            local_port_match = (
+                provider.kind != AIKind.LOCAL
+                or (signal.port is not None and signal.port in provider.ports)
+            )
+            if host_match and local_port_match:
                 score += 4
                 evidence.append(
                     MatchEvidence("host", "destination host matched provider signature")
