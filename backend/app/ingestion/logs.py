@@ -6,9 +6,8 @@ diagnostics, logs, or persistence. This adapter emits T1 metadata events only.
 from __future__ import annotations
 
 import json
-import socket
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import PurePath
 from typing import Any
 from urllib.parse import urlsplit
@@ -60,7 +59,7 @@ def _timestamp(value: Any) -> datetime:
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         # HAR/proxy timestamps may be Unix seconds or milliseconds.
         seconds = float(value) / 1000 if value > 10_000_000_000 else float(value)
-        return datetime.fromtimestamp(seconds, tz=timezone.utc)
+        return datetime.fromtimestamp(seconds, tz=UTC)
     if isinstance(value, str) and value.strip():
         normalized = value.strip().replace("Z", "+00:00")
         parsed = datetime.fromisoformat(normalized)
@@ -94,7 +93,9 @@ def _headers(value: Any) -> dict[str, str]:
     return result
 
 
-def _request_parts(record: dict[str, Any], source_format: str) -> tuple[dict[str, Any], dict[str, Any], str]:
+def _request_parts(
+    record: dict[str, Any], source_format: str
+) -> tuple[dict[str, Any], dict[str, Any], str]:
     if source_format == "har":
         request = record.get("request") or {}
         if not isinstance(request, dict):
