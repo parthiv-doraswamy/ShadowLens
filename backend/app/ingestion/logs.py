@@ -71,13 +71,17 @@ def _timestamp(value: Any) -> datetime:
 
 
 def _headers(value: Any) -> dict[str, str]:
+    if isinstance(value, dict) and isinstance(value.get("fields"), list):
+        value = value["fields"]
     if isinstance(value, dict):
         pairs = value.items()
     elif isinstance(value, list):
         pairs = (
             (item.get("name"), item.get("value"))
-            for item in value
             if isinstance(item, dict)
+            else (item[0], item[1])
+            for item in value
+            if isinstance(item, dict) or (isinstance(item, list) and len(item) >= 2)
         )
     else:
         return {}
@@ -133,6 +137,13 @@ def _request_parts(record: dict[str, Any], source_format: str) -> tuple[dict[str
                 url = f"{scheme}://{host}:{port or default_port}{path}"
         headers = record.get("headers") or record.get("request_headers")
         method = record.get("method") or record.get("request_method")
+        request_line = record.get("request")
+        if isinstance(request_line, str):
+            parts = request_line.split()
+            if len(parts) >= 2:
+                method = method or parts[0]
+                if not record.get("request_uri") and not record.get("uri"):
+                    record = {**record, "path": parts[1]}
         started = (
             record.get("ts") or record.get("timestamp") or record.get("@timestamp")
             or record.get("time") or record.get("startedDateTime")
