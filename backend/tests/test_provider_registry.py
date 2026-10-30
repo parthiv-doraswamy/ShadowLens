@@ -189,3 +189,25 @@ def test_wildcard_host_patterns_support_region_labels_and_boundaries() -> None:
         port=443,
     ))
     assert spoofed.provider == "unknown"
+
+
+def test_unknown_llm_api_kind_conforms_to_domain_contract() -> None:
+    from app.models.contracts import AIContext
+
+    result = REGISTRY.classify(Signal(
+        host="unknown.example",
+        path="/v1/chat/completions",
+    ))
+    context = AIContext.model_validate(result.to_ai_context())
+    assert context.provider == "unknown_llm_api"
+    assert context.kind.value == "unknown_llm_api"
+
+
+def test_signal_repr_and_serialization_do_not_expose_header_values() -> None:
+    signal = Signal(
+        host="gateway.internal",
+        headers={"Authorization": "Bearer do-not-print-this"},
+    )
+    assert "do-not-print-this" not in repr(signal)
+    assert "do-not-print-this" not in str(signal.model_dump())
+    assert signal.headers["authorization"] == "Bearer do-not-print-this"
