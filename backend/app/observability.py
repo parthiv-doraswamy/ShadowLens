@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import re
 import sys
+from collections.abc import Mapping, MutableMapping
 from typing import Any
 
 import structlog
@@ -86,8 +87,8 @@ def sanitize_log_value(value: object, *, depth: int = 0) -> object:
 def redact_log_fields(
     _logger: Any,
     _method_name: str,
-    event_dict: dict[str, Any],
-) -> dict[str, Any]:
+    event_dict: MutableMapping[str, Any],
+) -> Mapping[str, Any]:
     """Structlog processor that redacts risky field names and sanitizes values."""
     safe: dict[str, Any] = {}
     for key, value in event_dict.items():
