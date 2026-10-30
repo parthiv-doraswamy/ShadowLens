@@ -134,11 +134,11 @@ def create_app(
         openapi_url=None,
         lifespan=lifespan,
     )
-    bearer_scheme = HTTPBearer(auto_error=False)
+    bearer_dependency = Depends(HTTPBearer(auto_error=False))
 
     async def require_api_token(
         request: Request,
-        credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+        credentials: HTTPAuthorizationCredentials | None = bearer_dependency,
     ) -> None:
         expected_token: str = request.app.state.api_token
         if credentials is None or not secrets.compare_digest(
