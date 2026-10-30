@@ -172,7 +172,8 @@ def create_app(
                 "name": status.name,
                 "running": status.running,
                 "restarts": status.restarts,
-                "last_error": status.last_error,
+                # Exception messages can contain paths or source data; health is public.
+                "last_error_present": status.last_error is not None,
             }
             for status in collector_statuses
         ]

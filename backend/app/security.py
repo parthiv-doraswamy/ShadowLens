@@ -27,8 +27,9 @@ def load_or_create_api_token(token_path: Path | None = None) -> str:
         return configured_token
 
     path = token_path or _default_token_path()
+    parent_existed = path.parent.exists()
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    if os.name != "nt":
+    if os.name != "nt" and not parent_existed:
         path.parent.chmod(0o700)
 
     if path.is_symlink():

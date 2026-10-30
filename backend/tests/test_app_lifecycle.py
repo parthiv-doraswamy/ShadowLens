@@ -163,3 +163,18 @@ def test_shutdown_stops_collectors_then_drains_accepted_events(tmp_path: Path) -
             assert session.exec(select(EventRow)).first() is not None
     finally:
         engine.dispose()
+
+
+def test_token_creation_does_not_change_existing_parent_permissions(tmp_path: Path) -> None:
+    parent = tmp_path / "shared-directory"
+    parent.mkdir()
+    if os.name != "nt":
+        parent.chmod(0o755)
+    app = create_app(
+        database_url=f"sqlite:///{tmp_path / 'existing-parent.db'}",
+        token_path=parent / "access.token",
+    )
+    with TestClient(app):
+        assert (parent / "access.token").is_file()
+        if os.name != "nt":
+            assert stat.S_IMODE(parent.stat().st_mode) == 0o755
