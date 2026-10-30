@@ -128,7 +128,7 @@ def create_database_engine(database_url: str | None = None) -> Engine:
     """Create a SQLite engine with WAL, foreign keys and bounded busy wait."""
     default_path = Path(os.getenv("SHADOWLENS_DB_PATH", ".shadowlens/shadowlens.db"))
     default_url = f"sqlite:///{default_path.as_posix()}"
-    url = database_url or os.getenv("SHADOWLENS_DATABASE_URL", default_url)
+    url: str = database_url or os.getenv("SHADOWLENS_DATABASE_URL", default_url)
     engine = create_engine(
         url, connect_args={"check_same_thread": False, "timeout": 5.0}, echo=False
     )
@@ -235,18 +235,30 @@ def save_ai_tool(session: Session, tool: AITool) -> None:
     last_seen = tool.last_seen.isoformat()
     _ensure_asset(session, tool.host_id, first_seen)
     row = session.get(AIToolRow, str(tool.tool_id))
-    values = {
-        "host_id": tool.host_id, "name": tool.name, "kind": tool.kind.value,
-        "provider": tool.provider, "sanctioned": tool.sanctioned,
-        "discovery": tool.discovery.value, "first_seen": first_seen,
-        "last_seen": last_seen,
-        "capabilities_json": json.dumps(tool.capabilities, separators=(",", ":")),
-    }
+    capabilities_json = json.dumps(tool.capabilities, separators=(",", ":"))
     if row is None:
-        session.add(AIToolRow(tool_id=str(tool.tool_id), **values))
+        session.add(AIToolRow(
+            tool_id=str(tool.tool_id),
+            host_id=tool.host_id,
+            name=tool.name,
+            kind=tool.kind.value,
+            provider=tool.provider,
+            sanctioned=tool.sanctioned,
+            discovery=tool.discovery.value,
+            first_seen=first_seen,
+            last_seen=last_seen,
+            capabilities_json=capabilities_json,
+        ))
     else:
-        for key, value in values.items():
-            setattr(row, key, value)
+        row.host_id = tool.host_id
+        row.name = tool.name
+        row.kind = tool.kind.value
+        row.provider = tool.provider
+        row.sanctioned = tool.sanctioned
+        row.discovery = tool.discovery.value
+        row.first_seen = first_seen
+        row.last_seen = last_seen
+        row.capabilities_json = capabilities_json
 
 
 def get_event(session: Session, event_id: UUID) -> EventRow | None:
