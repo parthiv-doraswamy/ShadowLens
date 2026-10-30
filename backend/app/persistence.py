@@ -128,7 +128,11 @@ def create_database_engine(database_url: str | None = None) -> Engine:
     """Create a SQLite engine with WAL, foreign keys and bounded busy wait."""
     default_path = Path(os.getenv("SHADOWLENS_DB_PATH", ".shadowlens/shadowlens.db"))
     default_url = f"sqlite:///{default_path.as_posix()}"
-    url: str = database_url or os.getenv("SHADOWLENS_DATABASE_URL", default_url)
+    url = database_url
+    if url is None:
+        url = os.getenv("SHADOWLENS_DATABASE_URL")
+    if url is None:
+        url = default_url
     engine = create_engine(
         url, connect_args={"check_same_thread": False, "timeout": 5.0}, echo=False
     )
