@@ -3,7 +3,7 @@
 **Source:** `ShadowLens_Unified_Master_Specification.md`, especially sections 15, 17, 20, 21 and 22.  
 **Planning model:** Section 17 milestone sequence M0–M8 is the primary detailed delivery order. Section 20 supplies vertical-slice phase gates A–G. The work-allocation prompt pack supplies chunk-sized execution sequencing.  
 **Current branch:** `main`  
-**Current state:** Chunks 0.1–0.4 and Chunk 1.1 are complete and verified by CI/security workflows; Chunks 1.2 landing page and 1.3 dashboard shell are implemented; Chunk 1.2 passed CI/security, while Chunk 1.3 awaits final verification. Product milestones are not complete.
+**Current state:** Chunks 0.1–0.4 and Chunk 1.1 are complete and verified by CI/security workflows; Chunks 1.2 landing page and 1.3 dashboard shell are implemented and verified by CI/security workflows. Product milestones are not complete.
 
 ## 1. Delivery principles
 

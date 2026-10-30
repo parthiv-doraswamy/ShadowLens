@@ -19,5 +19,6 @@
 
 ## Validation
 - Playwright covers workspace navigation, active route, preview disclaimer and mobile navigation.
-- First CI run exposed a missing accessible name on the workspace navigation landmark; this was corrected by adding the explicit navigation label.
-- CI and security workflows must be checked again on the corrected commit before this chunk is marked verified.
+- The first CI run exposed a missing accessible name on the workspace navigation landmark; the explicit accessible label was added.
+- Corrected commit `b213b2f4fdb28b324fa8007611def1fdea5f52bf` passed CI run `41091395939` (backend lint/types/tests, frontend typecheck/build and Playwright browser smoke) and Security run `41091395281` (Gitleaks, Semgrep, CodeQL Python and CodeQL JavaScript/TypeScript).
+- Chunk 1.3 is verified on the corrected implementation commit.
