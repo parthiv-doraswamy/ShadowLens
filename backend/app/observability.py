@@ -111,7 +111,9 @@ def configure_structured_logging(level_name: str | None = None) -> None:
         "CRITICAL": logging.CRITICAL,
     }
     if name not in levels:
-        raise ValueError("SHADOWLENS_LOG_LEVEL must be DEBUG, INFO, WARNING, ERROR or CRITICAL")
+        raise ValueError(
+            "SHADOWLENS_LOG_LEVEL must be DEBUG, INFO, WARNING, ERROR or CRITICAL"
+        )
 
     # Uvicorn's default access log includes the raw request target and query string.
     logging.getLogger("uvicorn.access").disabled = True
