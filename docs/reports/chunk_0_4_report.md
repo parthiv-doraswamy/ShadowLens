@@ -24,4 +24,4 @@
 
 ## Exit assessment
 
-Configuration work is committed. Chunk 0.4 configuration is implemented. CI checks passed, but security validation is **partially verified**: Gitleaks and Semgrep passed while both CodeQL jobs failed. Investigate the failure logs and rerun CodeQL before calling the security gate complete.
+Configuration work is committed. Chunk 0.4 configuration is implemented. CI checks passed, but security validation is **partially verified**: Gitleaks and Semgrep passed while both CodeQL jobs failed. The initial CodeQL jobs failed. A likely missing SARIF-upload permission was addressed by granting `security-events: write`; the follow-up run must succeed before the security gate is complete.
