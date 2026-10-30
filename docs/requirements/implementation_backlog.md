@@ -299,3 +299,15 @@ The master spec's milestone gates take precedence over any schedule estimate; th
 | M0 remaining | Bounded event bus, CLI/init/serve, local bearer token, DB-aware health and structured redacted logging remain outstanding |
 
 Chunk 2.2 is a persistence primitive only: it is not yet wired into the FastAPI lifecycle or ingest pipeline. No raw request-body table is defined, and transient body references are excluded from event serialization.
+
+
+## 7. Current execution update — Chunk 2.3
+
+| Work package | State |
+|---|---|
+| M0.2 canonical domain contracts (Chunk 2.1) | Implemented; CI and security workflows passed on a1a65c3 |
+| M0.3 SQLite/SQLModel schema and WAL foundation (Chunk 2.2) | Implemented; CI/security workflow status tracked on commit aaf0ac1 |
+| M0.4 bounded asynchronous event bus (Chunk 2.3) | Implemented: bounded queue, awaitable backpressure, explicit nonblocking rejection, counters, worker isolation/drain and collector supervision with capped restart backoff; tests added; verification pending |
+| M0.5–M0.6 | Local bearer token, protected API baseline, DB-aware health, structured redacted logs and full M0 end-to-end integration remain outstanding |
+
+Chunk 2.3 does not connect collectors to FastAPI or persistence. Queue capacity and worker count are constructor-configurable; deployment configuration and health/API exposure are later integration work.

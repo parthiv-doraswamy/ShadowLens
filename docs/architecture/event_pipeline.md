@@ -48,7 +48,13 @@ The exact JSON example in section 5.1 is the canonical starting contract. Any sc
 
 ## 5. Queue and backpressure
 
-Use a bounded asyncio.Queue and supervised workers. Queue capacity, worker concurrency, overflow policy and shutdown drain behavior are implementation decisions that must be documented and tested before M0 exit. No unbounded in-memory queue. No silent event loss: expose accepted/rejected/dropped counters and health state; prefer explicit backpressure or structured rejection over hidden drops. Isolate a failing collector and restart with backoff.
+The implemented M0 event bus uses a bounded `asyncio.Queue` (default capacity is a caller-selected setting; the primitive defaults to 256) and a fixed worker count. Producers may await `publish` to apply backpressure or use `publish_nowait` to receive an explicit `QueueFull`; an optional publish timeout is also explicit. The bus records accepted, successfully processed, processing-failed and rejected counts plus queue depth, active workers and intake state. Handler exceptions are isolated and counted; they do not terminate the worker. A failed handler invocation is not reported as successfully processed.
+
+Shutdown first closes intake, waits for all accepted queue items to be acknowledged, then sends one sentinel per worker and awaits worker completion. This drains accepted events before worker exit. A caller that requires bounded shutdown time must enforce its own outer timeout and report an incomplete drain rather than silently discarding events.
+
+Collectors implement a narrow async protocol receiving an event publisher and cooperative stop event. The supervisor runs each collector independently, records the latest exception/restart count, and restarts unexpected exits with capped exponential backoff. One failing collector does not stop its peers. Collectors should check the stop event and return promptly during shutdown.
+
+The bus is a processing primitive, not yet connected to FastAPI, persistence, or a real collector. Queue capacity, worker count and any deployment-specific overflow policy must be selected and surfaced by application configuration before production use.
 
 ## 6. Payload lifecycle
 
