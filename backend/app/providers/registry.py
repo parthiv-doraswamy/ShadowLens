@@ -13,7 +13,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.enums import AIKind
 
@@ -244,7 +244,7 @@ class ProviderRegistry:
 
         if scored:
             scored.sort(key=lambda item: (item[0], item[1].id), reverse=True)
-            best_score, best, evidence = scored[0]
+            _, best, evidence = scored[0]
             # A concrete host/SNI match is strong; corroborated non-host signals
             # can classify only when at least two independent signal families match.
             strong_host = any(item.signal in {"host", "sni"} for item in evidence)
