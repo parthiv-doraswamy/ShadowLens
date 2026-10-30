@@ -59,6 +59,21 @@ def test_har_import_emits_metadata_and_never_retains_bodies_or_secrets() -> None
     assert event.http.headers["Authorization"] == "REDACTED"
 
 
+def test_har_acceptance_fixture_finds_twelve_ai_calls_among_five_hundred() -> None:
+    entries = [
+        har_entry() if index < 12 else har_entry(
+            "https://example.com/health"
+        )
+        for index in range(500)
+    ]
+    report = parse_log_bytes("large-capture.har", har_bytes(entries))
+    ai_events = [event for event in report.events if event.ai is not None]
+    assert report.records_seen == 500
+    assert report.imported == 500
+    assert len(ai_events) == 12
+    assert all(event.ai is not None and event.ai.provider == "openai" for event in ai_events)
+
+
 def test_har_import_continues_after_malformed_record() -> None:
     report = parse_log_bytes(
         "capture.har",
