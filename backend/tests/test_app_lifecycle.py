@@ -5,6 +5,8 @@ import json
 import os
 import stat
 import time
+
+import pytest
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -14,6 +16,7 @@ from sqlmodel import Session, select
 
 from app.bus.event_bus import EventPublisher
 from app.main import create_app
+from app.observability import configure_structured_logging
 from app.persistence import EventRow
 
 
@@ -180,3 +183,58 @@ def test_token_creation_does_not_change_existing_parent_permissions(tmp_path: Pa
         assert (parent / "access.token").is_file()
         if os.name != "nt":
             assert stat.S_IMODE(parent.stat().st_mode) == 0o755
+
+
+def test_http_logs_are_json_and_exclude_query_headers_and_payload(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    configure_structured_logging("INFO")
+    app = create_app(
+        database_url=f"sqlite:///{tmp_path / 'access-log.db'}",
+        token_path=tmp_path / "access-log.token",
+    )
+    with TestClient(app) as client:
+        response = client.get(
+            "/api/health?access_token=query-secret-value",
+            headers={"Authorization": "Bearer header-secret-value"},
+        )
+        assert response.status_code == 200
+        request_id = response.headers["X-Request-ID"]
+
+    output = capsys.readouterr().err
+    assert "query-secret-value" not in output
+    assert "header-secret-value" not in output
+    records = [json.loads(line) for line in output.splitlines() if line.strip()]
+    access = next(record for record in records if record["event"] == "http_request_completed")
+    assert access["route"] == "/api/health"
+    assert access["method"] == "GET"
+    assert access["status_code"] == 200
+    assert access["request_id"] == request_id
+    assert "query" not in access
+    assert "headers" not in access
+    assert "body" not in access
+
+
+def test_unhandled_error_returns_generic_response_and_safe_log(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    configure_structured_logging("INFO")
+    app = create_app(
+        database_url=f"sqlite:///{tmp_path / 'internal-error.db'}",
+        token_path=tmp_path / "internal-error.token",
+    )
+
+    @app.get("/api/test-failure")
+    async def fail_request() -> None:
+        raise RuntimeError("sensitive internal error text")
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.get("/api/test-failure")
+        assert response.status_code == 500
+        assert response.json() == {"detail": "Internal server error"}
+        assert response.headers.get("X-Request-ID")
+
+    output = capsys.readouterr().err
+    assert "sensitive internal error text" not in output
+    assert "http_request_failed" in output
+    assert "RuntimeError" in output

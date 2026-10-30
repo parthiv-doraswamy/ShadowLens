@@ -308,7 +308,7 @@ Chunk 2.2 is a persistence primitive only: it is not yet wired into the FastAPI 
 | M0.2 canonical domain contracts (Chunk 2.1) | Implemented; CI and security workflows passed on a1a65c3 |
 | M0.3 SQLite/SQLModel schema and WAL foundation (Chunk 2.2) | Implemented; CI/security workflow status tracked on commit aaf0ac1 |
 | M0.4 bounded asynchronous event bus (Chunk 2.3) | Implemented: bounded queue, awaitable backpressure, explicit nonblocking rejection, counters, worker isolation/drain and collector supervision with capped restart backoff; CI/security passed on commit 5d0a63d |
-| M0.5–M0.6 | Chunk 2.4 implements local bearer-token auth, protected metadata intake and DB-aware health; structured redacted logging and CLI work remain outstanding |
+| M0.5–M0.6 | Chunks 2.4–2.5 implement local bearer-token auth, protected metadata intake, DB-aware health, structured JSON application logs and redaction tests; CLI work remains outstanding |
 
 Chunk 2.3 does not connect collectors to FastAPI or persistence. Queue capacity and worker count are constructor-configurable; deployment configuration and health/API exposure are later integration work.
 
@@ -327,3 +327,17 @@ Chunk 2.3 does not connect collectors to FastAPI or persistence. Queue capacity 
 Chunk 2.4 deliberately keeps raw bodies out of the HTTP ingestion contract: the request-specific schema has no `body_ref` field, and sensitive HTTP headers are redacted before persistence. Queue acceptance returns `202`, not a durable-commit guarantee; the event bus is in-memory and may lose queued work if the process terminates before persistence completes. No real collector is configured by default.
 
 The API route follows the source's `/api` prefix and `/api/health` NFR-SEC-1 exception. The former bootstrap `/api/v1/health` path is no longer used. Multipart upload support remains assigned to the provider/collector milestone, not this application-wiring chunk.
+
+
+## 9. Current execution update — Chunk 2.5
+
+| Work package | State |
+|---|---|
+| M0.6 structured JSON logging | Implemented with structlog, timestamps, severity and JSON rendering to stderr |
+| Privacy-safe HTTP access logs | Implemented: route template, method, status, duration and server request ID only; no raw query, headers, client address or body |
+| Secret/payload redaction | Implemented recursive sensitive-key redaction, common bearer/API-key pattern scrubbing, bounded strings/collections/depth and no arbitrary object repr |
+| Failure diagnostics | Worker/collector logs record exception class and counters/backoff only; collector supervisor retains only exception class |
+| Operational hardening | Uvicorn access logging disabled; generic internal-error response; `X-Request-ID` returned for handled responses |
+| M0 remaining | CLI `init/serve`, real collectors, multipart ingestion, structured file logging/rotation and broader API inventory remain outstanding |
+
+Chunk 2.5 does not claim that third-party, host OS or process-supervisor logs are sanitized. Application-owned logging is covered by focused redaction and no-query/header/body tests. Raw payloads and exception messages are not intentionally logged.

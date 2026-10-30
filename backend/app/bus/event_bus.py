@@ -7,6 +7,9 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from app.models.contracts import Event
+from app.observability import get_logger
+
+logger = get_logger("shadowlens.bus")
 
 EventHandler = Callable[[Event], Awaitable[None]]
 EventPublisher = Callable[[Event], Awaitable[None]]
@@ -99,8 +102,13 @@ class EventBus:
                     await self._handler(item)
                 except asyncio.CancelledError:
                     raise
-                except Exception:
+                except Exception as exc:
                     self._processing_failed += 1
+                    logger.error(
+                        "event_processing_failed",
+                        exception_type=type(exc).__name__,
+                        processing_failed=self._processing_failed,
+                    )
                 else:
                     self._processed += 1
             finally:
@@ -181,8 +189,15 @@ class CollectorSupervisor:
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
-                self._last_errors[name] = f"{type(exc).__name__}: {exc}"
+                # Retain only the exception class; messages may contain request/source data.
+                self._last_errors[name] = type(exc).__name__
                 self._restarts[name] += 1
+                logger.warning(
+                    "collector_restart",
+                    exception_type=type(exc).__name__,
+                    restart_count=self._restarts[name],
+                    backoff_seconds=round(delay, 3),
+                )
                 try:
                     await asyncio.wait_for(self._stop_event.wait(), timeout=delay)
                 except TimeoutError:

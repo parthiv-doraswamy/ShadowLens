@@ -1,4 +1,5 @@
 import asyncio
+import json
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -6,6 +7,7 @@ import pytest
 
 from app.bus.event_bus import CollectorSupervisor, EventBus
 from app.models.contracts import Event
+from app.observability import configure_structured_logging
 
 
 def make_event() -> Event:
@@ -136,7 +138,7 @@ async def test_collector_supervisor_restarts_one_failed_collector() -> None:
     statuses = {status.name: status for status in supervisor.statuses()}
     assert flaky.calls >= 2
     assert statuses["flaky"].restarts >= 1
-    assert statuses["flaky"].last_error == "OSError: temporary source failure"
+    assert statuses["flaky"].last_error == "OSError"
     assert statuses["stable"].running
     await supervisor.stop()
     assert all(not status.running for status in supervisor.statuses())
@@ -152,3 +154,26 @@ async def test_invalid_queue_and_backoff_configuration_rejected() -> None:
     with pytest.raises(ValueError):
         CollectorSupervisor({}, publish=lambda _event: asyncio.sleep(0),
                             initial_backoff=2, max_backoff=1)
+
+
+@pytest.mark.asyncio
+async def test_worker_failure_logs_exception_type_without_message(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    configure_structured_logging("INFO")
+
+    async def handler(_event: Event) -> None:
+        raise RuntimeError("OPENAI_API_KEY=sk-proj-PRIVATE-EXAMPLE")
+
+    bus = EventBus(handler)
+    await bus.start()
+    await bus.publish(make_event())
+    await bus.stop()
+
+    output = capsys.readouterr().err
+    assert "event_processing_failed" in output
+    assert "RuntimeError" in output
+    assert "PRIVATE-EXAMPLE" not in output
+    records = [json.loads(line) for line in output.splitlines() if line.strip()]
+    failed = next(record for record in records if record["event"] == "event_processing_failed")
+    assert failed["exception_type"] == "RuntimeError"

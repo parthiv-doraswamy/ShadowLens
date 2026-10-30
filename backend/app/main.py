@@ -6,6 +6,8 @@ import secrets
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
+from time import perf_counter
+from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -14,10 +16,14 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import Engine, text
 from sqlalchemy.exc import SQLAlchemyError
+from starlette.middleware.base import RequestResponseEndpoint
+from starlette.responses import Response
+from structlog.contextvars import bind_contextvars, clear_contextvars
 
 from app.api_schemas import IngestEvent
 from app.bus.event_bus import Collector, CollectorSupervisor, EventBus
 from app.models.contracts import Event
+from app.observability import configure_structured_logging, get_logger
 from app.persistence import (
     create_database_engine,
     initialize_database,
@@ -87,6 +93,10 @@ def create_app(
     if capacity < 1 or workers < 1 or publish_timeout <= 0:
         raise ValueError("queue capacity, workers and publish timeout must be positive")
 
+    log_level = os.getenv("SHADOWLENS_LOG_LEVEL", "INFO")
+    configure_structured_logging(log_level)
+    logger = get_logger("shadowlens.application")
+
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         engine = create_database_engine(database_url)
@@ -101,7 +111,14 @@ def create_app(
             api_token = load_or_create_api_token(token_path)
             await bus.start()
             await supervisor.start()
-        except BaseException:
+            logger.info(
+                "application_started",
+                queue_capacity=capacity,
+                event_workers=workers,
+                collector_count=len(collectors or {}),
+            )
+        except BaseException as exc:
+            logger.error("application_start_failed", exception_type=type(exc).__name__)
             try:
                 await supervisor.stop()
             finally:
@@ -120,11 +137,21 @@ def create_app(
             yield
         finally:
             # Producers stop before intake closes; the bus then drains accepted work.
+            logger.info("application_stopping")
             try:
                 await supervisor.stop()
             finally:
                 try:
                     await bus.stop()
+                    stats = bus.stats()
+                    logger.info(
+                        "event_bus_stopped",
+                        accepted=stats.accepted,
+                        processed=stats.processed,
+                        processing_failed=stats.processing_failed,
+                        rejected=stats.rejected,
+                        queued=stats.queued,
+                    )
                 finally:
                     engine.dispose()
 
@@ -135,6 +162,50 @@ def create_app(
         openapi_url=None,
         lifespan=lifespan,
     )
+
+    @application.middleware("http")
+    async def privacy_safe_access_log(
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
+        """Log route templates and outcomes only; never inspect request headers or bodies."""
+        request_id = uuid4().hex
+        request.state.request_id = request_id
+        clear_contextvars()
+        bind_contextvars(request_id=request_id)
+        started = perf_counter()
+        status_code = 500
+        response_received = False
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+            response_received = True
+            response.headers["X-Request-ID"] = request_id
+            return response
+        except Exception as exc:
+            logger.error(
+                "http_request_failed",
+                method=request.method,
+                route="unhandled",
+                status_code=status_code,
+                exception_type=type(exc).__name__,
+                duration_ms=round((perf_counter() - started) * 1000, 2),
+            )
+            raise
+        finally:
+            route = request.scope.get("route")
+            route_path = getattr(route, "path", None)
+            route_template = route_path if isinstance(route_path, str) else "unmatched"
+            if response_received:
+                logger.info(
+                    "http_request_completed",
+                    method=request.method,
+                    route=route_template,
+                    status_code=status_code,
+                    duration_ms=round((perf_counter() - started) * 1000, 2),
+                )
+            clear_contextvars()
+
     @application.exception_handler(RequestValidationError)
     async def sanitized_validation_error(
         _request: Request, exc: RequestValidationError
@@ -148,6 +219,17 @@ def create_app(
                 "type": error["type"],
             })
         return JSONResponse(status_code=422, content={"detail": safe_errors})
+
+    @application.exception_handler(Exception)
+    async def sanitized_internal_error(_request: Request, _exc: Exception) -> JSONResponse:
+        """Avoid returning framework exception messages to API clients."""
+        request_id = getattr(_request.state, "request_id", None)
+        headers = {"X-Request-ID": request_id} if isinstance(request_id, str) else None
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error"},
+            headers=headers,
+        )
 
     bearer_dependency = Depends(HTTPBearer(auto_error=False))
 
@@ -176,8 +258,12 @@ def create_app(
             with engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
             database_status = "ok"
-        except SQLAlchemyError:
+        except SQLAlchemyError as exc:
             database_status = "unavailable"
+            logger.warning(
+                "database_health_check_failed",
+                exception_type=type(exc).__name__,
+            )
 
         bus_stats = event_bus.stats()
         bus_status = "accepting" if bus_stats.accepting else "unavailable"

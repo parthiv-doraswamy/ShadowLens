@@ -5,7 +5,7 @@
 
 ## 1. Backend stack
 
-Python 3.11+, FastAPI/Uvicorn, asyncio with bounded asyncio.Queue, Pydantic v2, SQLModel, SQLite WAL, psutil, dpkt, optional Scapy, httpx for the explicit gateway, pytest, Hypothesis, Ruff and mypy.
+Python 3.11+, FastAPI/Uvicorn, asyncio with bounded asyncio.Queue, Pydantic v2, SQLModel, SQLite WAL, structlog JSON logging, psutil, dpkt, optional Scapy, httpx for the explicit gateway, pytest, Hypothesis, Ruff and mypy.
 
 ## 2. Package boundaries
 
@@ -86,7 +86,7 @@ Implemented:
 - `POST /api/events` requires bearer authentication and accepts a validated metadata-only canonical event. HTTP request schemas deliberately exclude `http.body_ref`; sensitive headers are redacted before queueing and persistence.
 - First-run API token is generated locally and stored in `.shadowlens/access.token` with restrictive file/directory permissions. `SHADOWLENS_API_TOKEN` is an explicit operator override. API docs and OpenAPI are also protected.
 
-Not yet implemented: multipart HAR/JSONL/PCAP parsers, real source collectors, normalization/detection, list/query APIs, SSE, structured redacted logging, CLI commands, and the rest of the domain engines. The in-memory bus is not a durable queue: a process crash before a worker commits an accepted event can lose it. The server must be launched bound to `127.0.0.1`; the application factory does not enforce Uvicorn's bind address.
+Not yet implemented: multipart HAR/JSONL/PCAP parsers, real source collectors, normalization/detection, list/query APIs, SSE, CLI commands, and the rest of the domain engines. The in-memory bus is not a durable queue: a process crash before a worker commits an accepted event can lose it. The server must be launched bound to `127.0.0.1`; the application factory does not enforce Uvicorn's bind address.
 
 The previous `/api/v1/health` bootstrap route was replaced by the source-specified `/api/health` path. The auth exception follows the explicit NFR-SEC-1 rule rather than the broad API heading.
 
@@ -94,3 +94,12 @@ The previous `/api/v1/health` bootstrap route was replaced by the source-specifi
 ## 10. M0 application wiring boundary
 
 The metadata-event route is an integration seam, not a replacement for `POST /api/ingest` multipart support. Upload parsing and source-specific normalization remain in the provider/collector milestone. A successful `202` means the event entered the bounded in-memory queue; it does not claim durable commit. Health exposes accepted, processed, failed, rejected and queued counts so operators can distinguish queue acceptance from persistence completion.
+
+
+## 11. Structured logging and operational diagnostics
+
+Application-owned operational logs use structlog and JSON on stderr. The redaction processor recursively removes values for sensitive field names (authorization, cookies, passwords, API keys, tokens, prompt/body/payload/content/raw fields), scrubs common bearer/API-key patterns in remaining strings, bounds strings and collections, and avoids arbitrary object representations.
+
+The HTTP access middleware logs only method, matched route template, status, elapsed milliseconds and a server-generated request ID. It does not log query strings, request headers, client addresses, request bodies or payloads. The request ID is returned as `X-Request-ID`. Uvicorn's default access logger is disabled because it can include raw request targets and query strings.
+
+Worker and collector failures log the exception class and counters/backoff only; exception messages are not emitted or retained in the collector supervisor's status. Unexpected API exceptions return a generic 500 body and a request ID rather than framework exception text. This logging boundary does not imply that arbitrary third-party or operating-system logs are captured or sanitized.
